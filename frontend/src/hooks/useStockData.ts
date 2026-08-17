@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Company, PriceBar, Prediction } from '../types/stock';
 import { calculateBollingerBands } from '../utils/financialCalculations';
 
-const API_BASE = 'http://localhost:3000/api/v1';
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'https://nepse-alarm.onrender.com/api/v1';
 
 export function useStockData() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -20,7 +20,8 @@ export function useStockData() {
   const fetchCompanies = useCallback(async () => {
     setLoadingList(true);
     try {
-      const res = await axios.get(`${API_BASE}/stocks`, { timeout: 3000 });
+      // Try fetching from Render backend (with fallback timeout)
+      const res = await axios.get(`${API_BASE}/stocks`, { timeout: 6000 });
       if (Array.isArray(res.data) && res.data.length > 0) {
         setCompanies(res.data);
         setBackendOnline(true);
@@ -31,19 +32,108 @@ export function useStockData() {
         throw new Error('Empty company list from backend');
       }
     } catch (err) {
-      console.warn('Backend unavailable or empty. Using default high-liquidity stock list.', err);
+      console.warn('Backend sleeping or unreachable. Using comprehensive fallback company list.', err);
       setBackendOnline(false);
       const fallbackList: Company[] = [
+        // Commercial Banking
         { symbol: 'NABIL', name: 'Nabil Bank Limited', sector: 'Banking' },
-        { symbol: 'AHPC', name: 'Arun Valley Hydropower', sector: 'Hydropower' },
         { symbol: 'GBIME', name: 'Global IME Bank Limited', sector: 'Banking' },
-        { symbol: 'AKPL', name: 'Arun Kabeli Power Ltd.', sector: 'Hydropower' },
         { symbol: 'NICA', name: 'NIC Asia Bank Ltd.', sector: 'Banking' },
-        { symbol: 'SHIVM', name: 'Shivam Cements Ltd.', sector: 'Manufacturing' },
-        { symbol: 'CIT', name: 'Citizen Investment Trust', sector: 'Finance' },
-        { symbol: 'HDL', name: 'Himalayan Distillery Ltd.', sector: 'Manufacturing' },
+        { symbol: 'EBL', name: 'Everest Bank Limited', sector: 'Banking' },
+        { symbol: 'HBL', name: 'Himalayan Bank Limited', sector: 'Banking' },
+        { symbol: 'KBL', name: 'Kumari Bank Limited', sector: 'Banking' },
+        { symbol: 'MBL', name: 'Machhapuchchhre Bank Limited', sector: 'Banking' },
+        { symbol: 'NBL', name: 'Nepal Bank Limited', sector: 'Banking' },
+        { symbol: 'NMB', name: 'NMB Bank Limited', sector: 'Banking' },
+        { symbol: 'PCBL', name: 'Prime Commercial Bank Ltd.', sector: 'Banking' },
+        { symbol: 'PRVU', name: 'Prabhu Bank Limited', sector: 'Banking' },
+        { symbol: 'SANIMA', name: 'Sanima Bank Limited', sector: 'Banking' },
+        { symbol: 'SBI', name: 'Nepal SBI Bank Limited', sector: 'Banking' },
+        { symbol: 'SCB', name: 'Standard Chartered Bank Nepal', sector: 'Banking' },
+        { symbol: 'SBL', name: 'Siddhartha Bank Limited', sector: 'Banking' },
+        { symbol: 'ADBL', name: 'Agriculture Development Bank', sector: 'Banking' },
+        { symbol: 'CZBIL', name: 'Citizens Bank International', sector: 'Banking' },
+        { symbol: 'LSL', name: 'Laxmi Sunrise Bank Limited', sector: 'Banking' },
+        { symbol: 'NIMB', name: 'Nepal Investment Mega Bank', sector: 'Banking' },
+
+        // Hydropower
+        { symbol: 'AHPC', name: 'Arun Valley Hydropower', sector: 'Hydropower' },
+        { symbol: 'AKPL', name: 'Ankhu Khola Jalvidhyut Co.', sector: 'Hydropower' },
+        { symbol: 'API', name: 'API Power Company Ltd.', sector: 'Hydropower' },
+        { symbol: 'BPCL', name: 'Butwal Power Company Ltd.', sector: 'Hydropower' },
         { symbol: 'CHCL', name: 'Chilime Hydropower Co.', sector: 'Hydropower' },
-        { symbol: 'NLIC', name: 'Nepal Life Insurance Co.', sector: 'Insurance' },
+        { symbol: 'HDHPC', name: 'Himal Dolakha Hydropower', sector: 'Hydropower' },
+        { symbol: 'HURJA', name: 'National Hydro Power Company', sector: 'Hydropower' },
+        { symbol: 'KPCL', name: 'Kalika Power Company Ltd.', sector: 'Hydropower' },
+        { symbol: 'MEN', name: 'Mountain Energy Nepal Ltd.', sector: 'Hydropower' },
+        { symbol: 'NGPL', name: 'Ngadi Group Power Ltd.', sector: 'Hydropower' },
+        { symbol: 'NHDL', name: 'Nepal Hydro Developer Ltd.', sector: 'Hydropower' },
+        { symbol: 'RADHI', name: 'Radhi Bidyut Company Ltd.', sector: 'Hydropower' },
+        { symbol: 'RHPC', name: 'Rairang Hydropower Dev.', sector: 'Hydropower' },
+        { symbol: 'RHPL', name: 'Rasuwagadhi Hydropower Co.', sector: 'Hydropower' },
+        { symbol: 'RURU', name: 'Ruru Jalbidhyut Pariyojana', sector: 'Hydropower' },
+        { symbol: 'SAHAS', name: 'Sahas Urja Ltd.', sector: 'Hydropower' },
+        { symbol: 'SHPC', name: 'Sanima Mai Hydropower', sector: 'Hydropower' },
+        { symbol: 'SJCL', name: 'Sanjen Jalvidhyut Company', sector: 'Hydropower' },
+        { symbol: 'SPDL', name: 'Synergy Power Development', sector: 'Hydropower' },
+        { symbol: 'SSHL', name: 'Shiva Shree Hydropower', sector: 'Hydropower' },
+        { symbol: 'UMHL', name: 'United Modi Hydropower', sector: 'Hydropower' },
+        { symbol: 'UMRH', name: 'Upper Tamakoshi Hydropower', sector: 'Hydropower' },
+        { symbol: 'UPCL', name: 'Universal Power Company', sector: 'Hydropower' },
+        { symbol: 'BARUN', name: 'Barun Hydropower Co.', sector: 'Hydropower' },
+        { symbol: 'DORDI', name: 'Dordi Khola Jal Bidyut', sector: 'Hydropower' },
+        { symbol: 'TAMOR', name: 'Sanima Middle Tamor Hydro', sector: 'Hydropower' },
+        { symbol: 'MKJC', name: 'Mailung Khola Jalavidhyut', sector: 'Hydropower' },
+        { symbol: 'TPC', name: 'Terhathum Power Company', sector: 'Hydropower' },
+
+        // Insurance
+        { symbol: 'NLIC', name: 'Nepal Life Insurance Co.', sector: 'Life Insurance' },
+        { symbol: 'LICN', name: 'Life Insurance Corporation', sector: 'Life Insurance' },
+        { symbol: 'ALICL', name: 'Asian Life Insurance Co.', sector: 'Life Insurance' },
+        { symbol: 'HLI', name: 'Himalayan Life Insurance', sector: 'Life Insurance' },
+        { symbol: 'RNLI', name: 'Reliable Nepal Life Insurance', sector: 'Life Insurance' },
+        { symbol: 'SNLI', name: 'Sun Nepal Life Insurance', sector: 'Life Insurance' },
+        { symbol: 'SICL', name: 'Shikhar Insurance Co.', sector: 'Non Life Insurance' },
+        { symbol: 'SALICO', name: 'Sagarmatha Lumbini Insurance', sector: 'Non Life Insurance' },
+        { symbol: 'NIL', name: 'Neco Insurance Co. Ltd.', sector: 'Non Life Insurance' },
+        { symbol: 'NICL', name: 'Nepal Insurance Co. Ltd.', sector: 'Non Life Insurance' },
+        { symbol: 'PRIN', name: 'Prabhu Insurance Ltd.', sector: 'Non Life Insurance' },
+        { symbol: 'IGI', name: 'IGI Prudential Insurance', sector: 'Non Life Insurance' },
+        { symbol: 'HGI', name: 'Himalayan Reinsurance', sector: 'Non Life Insurance' },
+
+        // Development Banks & Finance
+        { symbol: 'KSBBL', name: 'Kamana Sewa Bikas Bank', sector: 'Development Banks' },
+        { symbol: 'LBBL', name: 'Lumbini Bikas Bank Ltd.', sector: 'Development Banks' },
+        { symbol: 'MNBBL', name: 'Muktinath Bikas Bank Ltd.', sector: 'Development Banks' },
+        { symbol: 'GBBL', name: 'Garima Bikas Bank Ltd.', sector: 'Development Banks' },
+        { symbol: 'JBBL', name: 'Jyoti Bikas Bank Ltd.', sector: 'Development Banks' },
+        { symbol: 'SHINE', name: 'Shine Resunga Dev. Bank', sector: 'Development Banks' },
+        { symbol: 'CIT', name: 'Citizen Investment Trust', sector: 'Investment' },
+        { symbol: 'NIFRA', name: 'Nepal Infrastructure Bank', sector: 'Investment' },
+        { symbol: 'HIDCL', name: 'Hydroelectricity Inv. & Dev.', sector: 'Investment' },
+        { symbol: 'ICFC', name: 'ICFC Finance Limited', sector: 'Finance' },
+        { symbol: 'MFIL', name: 'Manjushree Finance Ltd.', sector: 'Finance' },
+        { symbol: 'CFCL', name: 'Central Finance Co. Ltd.', sector: 'Finance' },
+        { symbol: 'GFCL', name: 'Goodwill Finance Co.', sector: 'Finance' },
+
+        // Manufacturing & Hotels & Others
+        { symbol: 'HDL', name: 'Himalayan Distillery Ltd.', sector: 'Manufacturing' },
+        { symbol: 'SHIVM', name: 'Shivam Cements Ltd.', sector: 'Manufacturing' },
+        { symbol: 'GCIL', name: 'Ghorahi Cement Industry', sector: 'Manufacturing' },
+        { symbol: 'SARBTM', name: 'Sarbottam Cement Ltd.', sector: 'Manufacturing' },
+        { symbol: 'SONA', name: 'Sonapur Minerals and Oil', sector: 'Manufacturing' },
+        { symbol: 'UNL', name: 'Unilever Nepal Limited', sector: 'Manufacturing' },
+        { symbol: 'OHL', name: 'Oriental Hotels Ltd.', sector: 'Hotels' },
+        { symbol: 'SHL', name: 'Soaltee Hotel Limited', sector: 'Hotels' },
+        { symbol: 'TRH', name: 'Taragaon Regency Hotel', sector: 'Hotels' },
+        { symbol: 'CGH', name: 'Chandragiri Hills Ltd.', sector: 'Hotels' },
+        { symbol: 'NTC', name: 'Nepal Telecom', sector: 'Others' },
+        { symbol: 'NRM', name: 'Nepal Republic Media', sector: 'Others' },
+        { symbol: 'CBBL', name: 'Chhimek Laghubitta', sector: 'Microfinance' },
+        { symbol: 'SKBBL', name: 'Sana Kisan Bikas Laghubitta', sector: 'Microfinance' },
+        { symbol: 'DDBL', name: 'Deprosc Laghubitta', sector: 'Microfinance' },
+        { symbol: 'FOWAD', name: 'Forward Microfinance', sector: 'Microfinance' },
+        { symbol: 'MERO', name: 'Mero Microfinance', sector: 'Microfinance' },
       ];
       setCompanies(fallbackList);
     } finally {
@@ -58,8 +148,8 @@ export function useStockData() {
 
     try {
       const [histRes, predRes] = await Promise.all([
-        axios.get(`${API_BASE}/stocks/${symbol}/enriched`, { timeout: 4000 }),
-        axios.get(`${API_BASE}/stocks/${symbol}/prediction`, { timeout: 4000 })
+        axios.get(`${API_BASE}/stocks/${symbol}/enriched`, { timeout: 6000 }),
+        axios.get(`${API_BASE}/stocks/${symbol}/prediction`, { timeout: 6000 })
       ]);
 
       if (Array.isArray(histRes.data) && histRes.data.length > 0) {
@@ -175,7 +265,7 @@ export function useStockData() {
 
 function generateMockHistory(symbol: string): PriceBar[] {
   const bars: PriceBar[] = [];
-  const basePrice = symbol === 'NABIL' ? 450 : symbol === 'AHPC' ? 320 : symbol === 'GBIME' ? 260 : 380;
+  const basePrice = symbol === 'NABIL' ? 450 : symbol === 'AHPC' ? 320 : symbol === 'GBIME' ? 260 : symbol === 'NTC' ? 850 : symbol === 'HDL' ? 1400 : 380;
   let price = basePrice;
   const now = new Date();
 
