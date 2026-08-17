@@ -21,7 +21,7 @@ interface FinancialChartProps {
 }
 
 export const FinancialChart: React.FC<FinancialChartProps> = ({ company, history }) => {
-  const [chartType, setChartType] = useState<ChartType>('candlestick');
+  const [chartType, setChartType] = useState<ChartType>('area');
   const [timeframe, setTimeframe] = useState<Timeframe>('3M');
   const [showEMA, setShowEMA] = useState<boolean>(true);
   const [showBollinger, setShowBollinger] = useState<boolean>(false);
@@ -77,9 +77,8 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({ company, history
     }
 
     const isBullish = close >= open;
-    const color = isBullish ? '#10b981' : '#ef4444';
+    const color = isBullish ? '#10b981' : '#f43f5e';
 
-    // Calculate scale factor: price difference to pixel height
     const priceDelta = Math.abs(open - close) || 0.01;
     const ratio = height / priceDelta;
 
@@ -90,7 +89,6 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({ company, history
 
     return (
       <g>
-        {/* Upper/Lower Wick */}
         <line
           x1={wickX}
           y1={isNaN(wickTop) ? topPixel : wickTop}
@@ -99,7 +97,6 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({ company, history
           stroke={color}
           strokeWidth={1.5}
         />
-        {/* Real Body */}
         <rect
           x={x}
           y={topPixel}
@@ -114,8 +111,8 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({ company, history
   };
 
   return (
-    <div className="p-4 sm:p-6 rounded-2xl glass-panel border border-slate-800/80 flex flex-col gap-3">
-      {/* Chart Control Toolbar */}
+    <div className="p-5 sm:p-6 rounded-2xl surface-card flex flex-col gap-3">
+      {/* Chart Toolbar */}
       <ChartToolbar
         chartType={chartType}
         onChangeChartType={setChartType}
@@ -133,18 +130,18 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({ company, history
         onToggleMACD={() => setShowMACD(!showMACD)}
       />
 
-      {/* Sticky Interactive OHLCV Readout Header */}
+      {/* Header Info */}
       <ChartHeader
         company={company}
         hoveredBar={hoveredBar}
         latestBar={latestBar}
       />
 
-      {/* Main Chart Graphic Area */}
-      <div className="h-[360px] sm:h-[420px] w-full relative">
+      {/* Main Chart Canvas */}
+      <div className="h-[360px] sm:h-[400px] w-full relative">
         {filteredData.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-slate-500 text-sm font-mono">
-            No price bars loaded for this security.
+          <div className="h-full flex items-center justify-center text-slate-500 text-sm">
+            No price bars loaded.
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
@@ -159,9 +156,9 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({ company, history
               onMouseLeave={() => setHoveredBar(null)}
             >
               <defs>
-                <linearGradient id="priceAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.0} />
+                <linearGradient id="minimalAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
 
@@ -183,14 +180,14 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({ company, history
 
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#090d16',
+                  backgroundColor: '#111827',
                   borderColor: '#1e293b',
-                  borderRadius: '12px',
-                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.7)',
+                  borderRadius: '10px',
+                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
                   fontSize: '11px',
                   fontFamily: 'monospace',
                 }}
-                labelStyle={{ color: '#94a3b8', fontWeight: 'bold', marginBottom: '4px' }}
+                labelStyle={{ color: '#94a3b8', fontWeight: 'bold' }}
               />
 
               {/* Volume Bars */}
@@ -200,7 +197,7 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({ company, history
                   name="Volume"
                   fill="#1e293b"
                   opacity={0.35}
-                  maxBarSize={12}
+                  maxBarSize={10}
                 />
               )}
 
@@ -210,7 +207,7 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({ company, history
                   dataKey="close"
                   name="Price Action"
                   shape={<CandlestickBar />}
-                  maxBarSize={14}
+                  maxBarSize={12}
                 />
               )}
 
@@ -220,11 +217,11 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({ company, history
                   type="monotone"
                   dataKey="close"
                   name="LTP (Rs.)"
-                  stroke="#06b6d4"
-                  strokeWidth={2.5}
-                  fill="url(#priceAreaGradient)"
+                  stroke="#10b981"
+                  strokeWidth={2.2}
+                  fill="url(#minimalAreaGradient)"
                   dot={false}
-                  activeDot={{ r: 5, fill: '#06b6d4' }}
+                  activeDot={{ r: 4, fill: '#10b981' }}
                 />
               )}
 
@@ -235,21 +232,21 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({ company, history
                   dataKey="close"
                   name="LTP (Rs.)"
                   stroke="#38bdf8"
-                  strokeWidth={2.2}
+                  strokeWidth={2}
                   dot={false}
-                  activeDot={{ r: 5, fill: '#38bdf8' }}
+                  activeDot={{ r: 4, fill: '#38bdf8' }}
                 />
               )}
 
-              {/* Bollinger Bands Envelopes */}
+              {/* Bollinger Bands */}
               {showBollinger && (
                 <Line
                   type="monotone"
                   dataKey="bbUpper"
-                  name="BB Upper (20, 2)"
-                  stroke="#a855f7"
-                  strokeDasharray="3 3"
-                  strokeWidth={1.2}
+                  name="BB Upper"
+                  stroke="#c084fc"
+                  strokeDasharray="2 2"
+                  strokeWidth={1}
                   dot={false}
                 />
               )}
@@ -257,32 +254,22 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({ company, history
                 <Line
                   type="monotone"
                   dataKey="bbLower"
-                  name="BB Lower (20, 2)"
-                  stroke="#a855f7"
-                  strokeDasharray="3 3"
-                  strokeWidth={1.2}
+                  name="BB Lower"
+                  stroke="#c084fc"
+                  strokeDasharray="2 2"
+                  strokeWidth={1}
                   dot={false}
                 />
               )}
 
-              {/* Moving Average Overlays */}
+              {/* Moving Averages */}
               {showEMA && (
                 <Line
                   type="monotone"
                   dataKey="ema12"
                   name="EMA 12"
                   stroke="#f59e0b"
-                  strokeWidth={1.4}
-                  dot={false}
-                />
-              )}
-              {showEMA && (
-                <Line
-                  type="monotone"
-                  dataKey="ema26"
-                  name="EMA 26"
-                  stroke="#ec4899"
-                  strokeWidth={1.4}
+                  strokeWidth={1.2}
                   dot={false}
                 />
               )}
@@ -292,7 +279,7 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({ company, history
                   dataKey="ema50"
                   name="EMA 50"
                   stroke="#8b5cf6"
-                  strokeWidth={1.8}
+                  strokeWidth={1.5}
                   dot={false}
                 />
               )}
@@ -301,7 +288,7 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({ company, history
         )}
       </div>
 
-      {/* Sub-panel Oscillators (RSI & MACD) */}
+      {/* Subpanels */}
       <IndicatorSubpanels data={filteredData} showRSI={showRSI} showMACD={showMACD} />
     </div>
   );

@@ -3,10 +3,11 @@ import { useStockData } from './hooks/useStockData';
 import { useWatchlist } from './hooks/useWatchlist';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { TickerTape } from './components/layout/TickerTape';
-import { Header } from './components/layout/Header';
+import { Header, MainNavTab } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { SearchModal } from './components/layout/SearchModal';
 import { StockSidebar } from './components/stock-explorer/StockSidebar';
+import { StockHero } from './components/stock-explorer/StockHero';
 import { FinancialChart } from './components/chart/FinancialChart';
 import { PredictionCard } from './components/prediction/PredictionCard';
 import { FeatureImportance } from './components/prediction/FeatureImportance';
@@ -17,9 +18,8 @@ import { TechnicalSummaryMeter } from './components/analytics/TechnicalSummaryMe
 import { SectorHeatmap } from './components/analytics/SectorHeatmap';
 import { PriceAlertModal } from './components/alerts/PriceAlertModal';
 import { ToastContainer, ToastMessage } from './components/common/Toast';
-import { Tabs } from './components/common/Tabs';
-import { Cpu, Layers, BarChart2, RefreshCw } from 'lucide-react';
 import { computePriceStats } from './utils/financialCalculations';
+import { PanelLeftClose, PanelLeftOpen, RefreshCw } from 'lucide-react';
 
 export default function App() {
   const {
@@ -30,11 +30,16 @@ export default function App() {
     prediction,
     loadingStock,
     training,
-    backendOnline,
     triggerRetrain,
   } = useStockData();
 
-  const { watchlist, toggleFavorite } = useWatchlist();
+  const { watchlist, toggleFavorite, isFavorite } = useWatchlist();
+
+  // Navigation tab state
+  const [activeTab, setActiveTab] = useState<MainNavTab>('overview');
+
+  // Sidebar visibility toggle on desktop
+  const [sidebarVisible, setSidebarVisible] = useState(true);
 
   // Modal States
   const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -42,10 +47,7 @@ export default function App() {
   const [alertsModalOpen, setAlertsModalOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Active View Tab for lower section
-  const [activeTab, setActiveTab] = useState<'ai_insights' | 'technical_scorecard' | 'sector_matrix'>('ai_insights');
-
-  // Toast notifications state
+  // Toast messages
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const addToast = (message: string, type: 'success' | 'error' | 'info' = 'info', title?: string) => {
@@ -53,14 +55,14 @@ export default function App() {
     setToasts((prev) => [...prev, { id, message, type, title }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4500);
+    }, 4000);
   };
 
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Global Keyboard shortcuts (Ctrl+K, Esc)
+  // Keyboard Shortcuts (Ctrl+K, Esc)
   useKeyboardShortcuts({
     onOpenSearch: () => setSearchModalOpen(true),
     onEscape: () => {
@@ -79,135 +81,166 @@ export default function App() {
     return computePriceStats(history);
   }, [history]);
 
-  const latestPrice = useMemo(() => {
-    if (!priceStats.latest) return null;
-    return {
-      close: priceStats.dayClose,
-      open: priceStats.dayOpen,
-      high: priceStats.dayHigh,
-      low: priceStats.dayLow,
-      change: priceStats.dayChange,
-      pctChange: priceStats.dayPctChange,
-    };
-  }, [priceStats]);
-
   const handleRetrainModel = async () => {
-    addToast(`Dispatching training request for ${selectedSymbol} to ML Service...`, 'info', 'ML Pipeline');
+    addToast(`Training hybrid model for ${selectedSymbol}...`, 'info', 'ML Pipeline');
     const res = await triggerRetrain(selectedSymbol);
     if (res.success) {
       addToast(res.message, 'success', 'Model Updated');
     } else {
-      addToast(res.message, 'error', 'Training Error');
+      addToast(res.message, 'error', 'Training Notice');
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#050811] text-slate-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-screen flex flex-col bg-[#0b0f19] text-slate-100 font-sans selection:bg-emerald-500/20 selection:text-emerald-200">
       
       {/* Toast Manager */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
-      {/* Top Benchmark Marquee Ribbon */}
+      {/* Top Ticker Ribbon */}
       <TickerTape />
 
-      {/* Primary Navigation Header */}
+      {/* Clean Navigation Header */}
       <Header
-        selectedSymbol={selectedSymbol}
-        selectedCompany={selectedCompany}
-        latestPrice={latestPrice}
+        activeTab={activeTab}
+        onChangeTab={setActiveTab}
         onOpenSearch={() => setSearchModalOpen(true)}
         onOpenArchitecture={() => setArchitectureModalOpen(true)}
         onOpenAlerts={() => setAlertsModalOpen(true)}
-        backendOnline={backendOnline}
+        watchlistCount={watchlist.length}
         mobileMenuOpen={mobileSidebarOpen}
         onToggleMobileMenu={() => setMobileSidebarOpen(!mobileSidebarOpen)}
       />
 
-      {/* Master Content Layout */}
-      <main className="flex-1 max-w-[1720px] w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* Main Page Layout */}
+      <main className="flex-1 max-w-[1720px] w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
         
-        {/* Left Column: Securities Explorer Sidebar (Cols 1-3) */}
-        <div className="lg:col-span-3 xl:col-span-3">
-          <StockSidebar
-            companies={companies}
-            selectedSymbol={selectedSymbol}
-            onSelectSymbol={setSelectedSymbol}
-            watchlist={watchlist}
-            onToggleFavorite={toggleFavorite}
-            mobileOpen={mobileSidebarOpen}
-            onCloseMobile={() => setMobileSidebarOpen(false)}
-          />
-        </div>
-
-        {/* Main Body: Visualizer & Analytics (Cols 4-12) */}
-        <div className="lg:col-span-9 xl:col-span-9 flex flex-col gap-6">
+        {/* Layout Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          {/* Key Metrics Quick Stats Bar */}
-          <KeyMetricsGrid history={history} />
+          {/* Collapsible Left Sidebar (Cols 1-3) */}
+          {sidebarVisible && (
+            <div className="lg:col-span-3 xl:col-span-3 transition-all">
+              <StockSidebar
+                companies={companies}
+                selectedSymbol={selectedSymbol}
+                onSelectSymbol={setSelectedSymbol}
+                watchlist={watchlist}
+                onToggleFavorite={toggleFavorite}
+                mobileOpen={mobileSidebarOpen}
+                onCloseMobile={() => setMobileSidebarOpen(false)}
+              />
+            </div>
+          )}
 
-          {/* Interactive Pro Financial Chart */}
-          <div className="relative">
-            {loadingStock && (
-              <div className="absolute inset-0 bg-[#050811]/60 backdrop-blur-xs z-20 flex items-center justify-center rounded-2xl">
-                <div className="p-4 rounded-xl glass-panel-elevated flex items-center gap-3 border border-slate-700">
-                  <RefreshCw className="h-5 w-5 text-cyan-400 animate-spin" />
-                  <span className="text-xs font-mono text-slate-200">Syncing price series...</span>
+          {/* Main Content Workspace (Cols 4-12 or full 12 if collapsed) */}
+          <div className={`${sidebarVisible ? 'lg:col-span-9 xl:col-span-9' : 'lg:col-span-12'} flex flex-col gap-6 transition-all`}>
+            
+            {/* Desktop Sidebar Toggle & Breadcrumb */}
+            <div className="hidden lg:flex items-center justify-between">
+              <button
+                onClick={() => setSidebarVisible(!sidebarVisible)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-medium text-slate-400 hover:text-white transition-colors"
+              >
+                {sidebarVisible ? <PanelLeftClose className="h-3.5 w-3.5" /> : <PanelLeftOpen className="h-3.5 w-3.5" />}
+                <span>{sidebarVisible ? 'Hide Sidebar' : 'Show Stocks'}</span>
+              </button>
+
+              <div className="text-xs font-mono text-slate-500">
+                Viewing: <strong className="text-slate-300">{selectedSymbol}</strong> ({selectedCompany?.name || 'Loading'})
+              </div>
+            </div>
+
+            {/* Clean Stock Hero Banner */}
+            <StockHero
+              company={selectedCompany}
+              latestBar={priceStats.latest}
+              previousBar={priceStats.previous}
+              prediction={prediction}
+              isFavorite={isFavorite(selectedSymbol)}
+              onToggleFavorite={() => toggleFavorite(selectedSymbol)}
+              onOpenAlerts={() => setAlertsModalOpen(true)}
+              onRetrain={handleRetrainModel}
+              training={training}
+            />
+
+            {/* VIEW 1: OVERVIEW & CHART (Default) */}
+            {activeTab === 'overview' && (
+              <div className="flex flex-col gap-6">
+                {/* 4 Clean Key Metrics */}
+                <KeyMetricsGrid history={history} />
+
+                {/* Main Interactive Chart */}
+                <div className="relative">
+                  {loadingStock && (
+                    <div className="absolute inset-0 bg-[#0b0f19]/60 backdrop-blur-xs z-20 flex items-center justify-center rounded-2xl">
+                      <div className="p-3 rounded-xl surface-card flex items-center gap-2.5">
+                        <RefreshCw className="h-4 w-4 text-emerald-400 animate-spin" />
+                        <span className="text-xs font-mono text-slate-200">Loading price history...</span>
+                      </div>
+                    </div>
+                  )}
+                  <FinancialChart company={selectedCompany} history={history} />
+                </div>
+
+                {/* 2-Column AI & Indicator Summary */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <PredictionCard
+                    prediction={prediction}
+                    training={training}
+                    onRetrain={handleRetrainModel}
+                    onOpenArchitecture={() => setArchitectureModalOpen(true)}
+                  />
+                  <TechnicalSummaryMeter latestBar={priceStats.latest} />
                 </div>
               </div>
             )}
-            <FinancialChart company={selectedCompany} history={history} />
-          </div>
 
-          {/* Institutional Data & Analytics Multi-View Tabs */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <Tabs
-                tabs={[
-                  { id: 'ai_insights', label: 'AI Decision & Confluence', icon: <Cpu className="h-3.5 w-3.5" /> },
-                  { id: 'technical_scorecard', label: 'Indicator Scorecard', icon: <BarChart2 className="h-3.5 w-3.5" /> },
-                  { id: 'sector_matrix', label: 'Sector Flow Matrix', icon: <Layers className="h-3.5 w-3.5" /> },
-                ]}
-                activeTab={activeTab}
-                onChange={setActiveTab}
-                variant="pill"
-              />
-            </div>
-
-            {/* TAB 1: AI DECISION & CONFLUENCE */}
+            {/* VIEW 2: AI INTELLIGENCE & XAI */}
             {activeTab === 'ai_insights' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fadeIn">
-                <PredictionCard
-                  prediction={prediction}
-                  selectedSymbol={selectedSymbol}
-                  training={training}
-                  onRetrain={handleRetrainModel}
-                  onOpenArchitecture={() => setArchitectureModalOpen(true)}
-                />
-                <FeatureImportance prediction={prediction} />
-                <SignalConfluence prediction={prediction} />
+              <div className="flex flex-col gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <PredictionCard
+                    prediction={prediction}
+                    training={training}
+                    onRetrain={handleRetrainModel}
+                    onOpenArchitecture={() => setArchitectureModalOpen(true)}
+                  />
+                  <FeatureImportance prediction={prediction} />
+                  <SignalConfluence prediction={prediction} />
+                </div>
+
+                <div className="surface-card p-6 flex flex-col gap-3">
+                  <h3 className="font-bold text-sm text-white">Understanding the Hybrid LSTM-XGBoost Model</h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    The prediction engine uses a two-stage machine learning architecture. In Stage 1, a Long Short-Term Memory (LSTM) recurrent neural network processes sequential 30-day price sequences (OHLCV) to extract latent trend memory embeddings. In Stage 2, these embeddings are combined with tabular technical momentum indicators (RSI, MACD, and Moving Average divergences) and evaluated through an XGBoost decision tree classifier to forecast trend direction with probabilistic confidence scores.
+                  </p>
+                </div>
               </div>
             )}
 
-            {/* TAB 2: TECHNICAL INDICATOR SCORECARD */}
-            {activeTab === 'technical_scorecard' && (
-              <div className="animate-fadeIn">
+            {/* VIEW 3: TECHNICAL SCORECARD */}
+            {activeTab === 'technical' && (
+              <div className="flex flex-col gap-6">
                 <TechnicalSummaryMeter latestBar={priceStats.latest} />
+                <FinancialChart company={selectedCompany} history={history} />
               </div>
             )}
 
-            {/* TAB 3: SECTOR FLOW MATRIX */}
-            {activeTab === 'sector_matrix' && (
-              <div className="animate-fadeIn">
+            {/* VIEW 4: SECTOR MATRIX */}
+            {activeTab === 'sectors' && (
+              <div className="flex flex-col gap-6">
                 <SectorHeatmap />
               </div>
             )}
+
           </div>
 
         </div>
 
       </main>
 
-      {/* Global Footer */}
+      {/* Clean Global Footer */}
       <Footer />
 
       {/* Search & Lookup Modal */}
@@ -221,18 +254,18 @@ export default function App() {
         onToggleFavorite={toggleFavorite}
       />
 
-      {/* Academic Model Architecture Flowchart Modal */}
+      {/* Model Architecture Modal */}
       <ModelArchitectureModal
         isOpen={architectureModalOpen}
         onClose={() => setArchitectureModalOpen(false)}
       />
 
-      {/* Quantitative Price & Indicator Alert Modal */}
+      {/* Price Alert Modal */}
       <PriceAlertModal
         isOpen={alertsModalOpen}
         onClose={() => setAlertsModalOpen(false)}
         selectedSymbol={selectedSymbol}
-        currentPrice={latestPrice?.close || 0}
+        currentPrice={priceStats.dayClose || 0}
         onAddToast={addToast}
       />
 

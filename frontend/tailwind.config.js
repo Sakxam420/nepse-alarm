@@ -8,37 +8,29 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Outfit', 'Inter', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+        sans: ['Outfit', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       colors: {
-        brand: {
-          darkest: '#050811',
-          darker: '#090d16',
-          dark: '#0d131f',
+        app: {
+          bg: '#0b0f19',
           card: '#111827',
-          surface: '#182234',
-          border: '#1f2d42',
-          'border-light': '#2b3d58',
+          subtle: '#0f172a',
+          hover: '#151f32',
+          border: 'rgba(255, 255, 255, 0.06)',
+          'border-strong': 'rgba(255, 255, 255, 0.12)',
+        },
+        brand: {
+          green: '#10b981',
+          red: '#f43f5e',
+          amber: '#f59e0b',
+          blue: '#3b82f6',
+          purple: '#8b5cf6',
           cyan: '#06b6d4',
-          primary: '#10b981',
-          secondary: '#3b82f6',
-          accent: '#8b5cf6',
-          bullish: '#10b981',
-          bearish: '#ef4444',
-          neutral: '#f59e0b',
         }
       },
-      boxShadow: {
-        'glow-emerald': '0 0 20px -3px rgba(16, 185, 129, 0.35)',
-        'glow-cyan': '0 0 20px -3px rgba(6, 182, 212, 0.35)',
-        'glow-rose': '0 0 20px -3px rgba(239, 68, 68, 0.35)',
-        'glow-blue': '0 0 20px -3px rgba(59, 130, 246, 0.35)',
-        'card-elevated': '0 10px 30px -10px rgba(0, 0, 0, 0.7)',
-      },
       animation: {
-        'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'marquee': 'marquee 35s linear infinite',
+        'marquee': 'marquee 40s linear infinite',
       },
       keyframes: {
         marquee: {

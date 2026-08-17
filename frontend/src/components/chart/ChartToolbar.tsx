@@ -38,18 +38,18 @@ export const ChartToolbar: React.FC<ChartToolbarProps> = ({
   const timeframes: Timeframe[] = ['1W', '1M', '3M', '6M', '1Y', 'ALL'];
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
+    <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/60">
       
-      {/* Left: Timeframe Range Buttons */}
-      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-900/80 border border-slate-800">
+      {/* Timeframe Selector */}
+      <div className="flex items-center gap-1 p-0.5 rounded-lg bg-slate-900 border border-slate-800">
         {timeframes.map((tf) => (
           <button
             key={tf}
             onClick={() => onChangeTimeframe(tf)}
-            className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
+            className={`px-2.5 py-1 rounded-md text-xs font-mono font-medium transition-all ${
               timeframe === tf
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-slate-800 text-white font-bold shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             {tf}
@@ -57,113 +57,97 @@ export const ChartToolbar: React.FC<ChartToolbarProps> = ({
         ))}
       </div>
 
-      {/* Center & Right: Chart Types & Indicator Overlays */}
-      <div className="flex flex-wrap items-center gap-2">
-        
-        {/* Chart Style Switcher */}
-        <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-900/80 border border-slate-800 text-xs">
+      {/* Chart Style & Indicators */}
+      <div className="flex items-center gap-2">
+        {/* Style */}
+        <div className="flex items-center gap-1 p-0.5 rounded-lg bg-slate-900 border border-slate-800 text-xs">
           <button
             onClick={() => onChangeChartType('candlestick')}
-            className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all font-medium ${
+            className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all ${
               chartType === 'candlestick'
-                ? 'bg-slate-800 text-cyan-300 font-semibold shadow-sm'
+                ? 'bg-slate-800 text-white font-medium shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
-            title="Candlestick Chart"
           >
             <BarChart3 className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Candles</span>
           </button>
           <button
             onClick={() => onChangeChartType('area')}
-            className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all font-medium ${
+            className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all ${
               chartType === 'area'
-                ? 'bg-slate-800 text-cyan-300 font-semibold shadow-sm'
+                ? 'bg-slate-800 text-white font-medium shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
-            title="Area Gradient Chart"
           >
             <LineChart className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Area</span>
           </button>
-          <button
-            onClick={() => onChangeChartType('line')}
-            className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all font-medium ${
-              chartType === 'line'
-                ? 'bg-slate-800 text-cyan-300 font-semibold shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-            title="Line Chart"
-          >
-            <LineChart className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Line</span>
-          </button>
         </div>
 
-        {/* Indicator Overlays & Panels */}
-        <div className="flex items-center gap-1.5 pl-1">
+        {/* Indicators Divider */}
+        <div className="h-4 w-px bg-slate-800 hidden sm:block" />
+
+        {/* Indicator Toggles */}
+        <div className="flex items-center gap-1 text-xs">
           <button
             onClick={onToggleEMA}
-            className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold border transition-all ${
+            className={`px-2 py-1 rounded-md border transition-all font-mono font-medium ${
               showEMA
-                ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
-                : 'bg-slate-900/60 text-slate-500 border-slate-800 hover:text-slate-300'
+                ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                : 'bg-transparent border-slate-800 text-slate-500 hover:text-slate-300'
             }`}
-            title="Toggle EMA (12, 26, 50)"
+            title="Moving Averages"
           >
             EMA
           </button>
-
           <button
             onClick={onToggleBollinger}
-            className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold border transition-all ${
+            className={`px-2 py-1 rounded-md border transition-all font-mono font-medium ${
               showBollinger
-                ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
-                : 'bg-slate-900/60 text-slate-500 border-slate-800 hover:text-slate-300'
+                ? 'bg-purple-500/10 border-purple-500/30 text-purple-400'
+                : 'bg-transparent border-slate-800 text-slate-500 hover:text-slate-300'
             }`}
-            title="Toggle Bollinger Bands (20, 2)"
+            title="Bollinger Bands"
           >
             BB
           </button>
-
           <button
             onClick={onToggleVolume}
-            className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold border transition-all ${
+            className={`px-2 py-1 rounded-md border transition-all font-mono font-medium ${
               showVolume
-                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
-                : 'bg-slate-900/60 text-slate-500 border-slate-800 hover:text-slate-300'
+                ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'
+                : 'bg-transparent border-slate-800 text-slate-500 hover:text-slate-300'
             }`}
-            title="Toggle Volume Bars"
+            title="Volume Bars"
           >
             VOL
           </button>
-
           <button
             onClick={onToggleRSI}
-            className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold border transition-all ${
+            className={`px-2 py-1 rounded-md border transition-all font-mono font-medium ${
               showRSI
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                : 'bg-slate-900/60 text-slate-500 border-slate-800 hover:text-slate-300'
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                : 'bg-transparent border-slate-800 text-slate-500 hover:text-slate-300'
             }`}
-            title="Toggle RSI Panel"
+            title="RSI Oscillator Panel"
           >
             RSI
           </button>
-
           <button
             onClick={onToggleMACD}
-            className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold border transition-all ${
+            className={`px-2 py-1 rounded-md border transition-all font-mono font-medium ${
               showMACD
-                ? 'bg-pink-500/20 text-pink-300 border-pink-500/40'
-                : 'bg-slate-900/60 text-slate-500 border-slate-800 hover:text-slate-300'
+                ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                : 'bg-transparent border-slate-800 text-slate-500 hover:text-slate-300'
             }`}
-            title="Toggle MACD Panel"
+            title="MACD Momentum Panel"
           >
             MACD
           </button>
         </div>
-
       </div>
+
     </div>
   );
 };
