@@ -1,106 +1,112 @@
 import React from 'react';
 import { PriceBar } from '../../types/stock';
 import { computePriceStats } from '../../utils/financialCalculations';
-import { formatNPR, formatCompact, formatPercentage } from '../../utils/formatters';
+
+const fmtK = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v.toFixed(0);
+const fmtP = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
+
+interface MetricCardProps {
+  label: string;
+  sub?: string;
+  children: React.ReactNode;
+}
+const MetricCard = ({ label, sub, children }: MetricCardProps) => (
+  <div className="card p-4 flex flex-col gap-2.5">
+    <div>
+      <div className="text-xs font-medium text-slate-400">{label}</div>
+      {sub && <div className="text-[11px]" style={{ color: '#334155' }}>{sub}</div>}
+    </div>
+    {children}
+  </div>
+);
+
+interface RangeBarProps {
+  low: number;
+  high: number;
+  current: number;
+  color?: string;
+}
+const RangeBar = ({ low, high, current, color = '#60a5fa' }: RangeBarProps) => {
+  const range = high - low || 1;
+  const pct = Math.min(Math.max(((current - low) / range) * 100, 0), 100);
+  return (
+    <div>
+      <div className="h-1.5 w-full rounded-full relative" style={{ background: 'rgba(255,255,255,0.06)' }}>
+        <div style={{ width: `${pct}%`, background: color }} className="h-full rounded-full transition-all duration-500" />
+      </div>
+      <div className="flex justify-between text-[11px] font-mono mt-1" style={{ color: '#475569' }}>
+        <span>{low.toFixed(0)}</span>
+        <span className="text-white">{current.toFixed(2)}</span>
+        <span>{high.toFixed(0)}</span>
+      </div>
+    </div>
+  );
+};
 
 interface KeyMetricsGridProps {
   history: PriceBar[];
 }
 
 export const KeyMetricsGrid: React.FC<KeyMetricsGridProps> = ({ history }) => {
-  const stats = computePriceStats(history);
-
-  if (!stats.latest) {
-    return null;
+  const s = computePriceStats(history);
+  if (!s.latest) {
+    return (
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="card p-4"><div className="skeleton h-16 rounded-lg" /></div>
+        ))}
+      </div>
+    );
   }
 
+  const volVsAvg = s.avgVolume30 > 0 ? (s.totalVolume / s.avgVolume30) * 100 : 100;
+  const trendUp = s.latest.close >= (s.latest.ema50 ?? s.latest.close);
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* 1. Day Range */}
-      <div className="p-4 rounded-xl surface-card flex flex-col justify-between gap-2.5">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-medium">Today's Range</span>
-          <span className="text-slate-400 text-[11px] font-mono">
-            {formatNPR(stats.dayLow)} – {formatNPR(stats.dayHigh)}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Today's Range */}
+      <MetricCard label="Today's Range" sub={`Day High / Low`}>
+        <RangeBar low={s.dayLow} high={s.dayHigh} current={s.dayClose} color="#22c55e" />
+      </MetricCard>
+
+      {/* 52-Week Range */}
+      <MetricCard label="52-Week Range" sub={`${s.pricePosition52W.toFixed(0)}% of range`}>
+        <RangeBar low={s.week52Low} high={s.week52High} current={s.dayClose} color="#60a5fa" />
+      </MetricCard>
+
+      {/* Volume */}
+      <MetricCard label="Volume" sub={`30D Avg: ${fmtK(s.avgVolume30)}`}>
+        <div className="flex items-end gap-2">
+          <span className="text-xl font-bold font-mono text-white">{fmtK(s.totalVolume)}</span>
+          <span
+            className="text-xs font-semibold mb-0.5"
+            style={{ color: volVsAvg >= 100 ? '#4ade80' : '#94a3b8' }}
+          >
+            {fmtP(volVsAvg - 100)} vs avg
           </span>
         </div>
+      </MetricCard>
 
-        {/* Range Bar */}
-        <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden relative">
-          <div
-            style={{ width: `${stats.pricePositionDay}%` }}
-            className="h-full bg-emerald-500 rounded-full"
-          />
-        </div>
-
-        <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono">
-          <span>Low</span>
-          <span>Close: {formatNPR(stats.dayClose)}</span>
-          <span>High</span>
-        </div>
-      </div>
-
-      {/* 2. 52-Week Range */}
-      <div className="p-4 rounded-xl surface-card flex flex-col justify-between gap-2.5">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-medium">52-Week Range</span>
-          <span className="text-slate-400 text-[11px] font-mono">
-            {formatNPR(stats.week52Low)} – {formatNPR(stats.week52High)}
+      {/* EMA Bias */}
+      <MetricCard label="50-Day Trend" sub={s.latest.ema50 ? `EMA: ${s.latest.ema50.toFixed(0)}` : '—'}>
+        <div>
+          <span
+            className="inline-block text-xs font-semibold px-2.5 py-1 rounded-lg"
+            style={{
+              background: trendUp ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+              color: trendUp ? '#4ade80' : '#f87171',
+              border: `1px solid ${trendUp ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
+            }}
+          >
+            {trendUp ? '↑ Above EMA 50' : '↓ Below EMA 50'}
           </span>
+          {s.latest.ema50 && (
+            <p className="text-[11px] mt-1.5 font-mono" style={{ color: '#475569' }}>
+              {fmtP(((s.latest.close - s.latest.ema50) / s.latest.ema50) * 100)} deviation
+            </p>
+          )}
         </div>
-
-        {/* Range Bar */}
-        <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden relative">
-          <div
-            style={{ width: `${stats.pricePosition52W}%` }}
-            className="h-full bg-blue-500 rounded-full"
-          />
-        </div>
-
-        <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono">
-          <span>52W Low</span>
-          <span>{stats.pricePosition52W.toFixed(0)}% of range</span>
-          <span>52W High</span>
-        </div>
-      </div>
-
-      {/* 3. Trading Volume */}
-      <div className="p-4 rounded-xl surface-card flex flex-col justify-between gap-2">
-        <div className="flex items-center justify-between text-xs text-slate-400">
-          <span className="font-medium">Trading Volume</span>
-          <span className="font-mono text-[11px]">30D Avg: {formatCompact(stats.avgVolume30)}</span>
-        </div>
-
-        <div className="flex items-baseline justify-between mt-1">
-          <span className="text-xl font-bold font-mono text-white">
-            {formatCompact(stats.totalVolume)} shares
-          </span>
-          <span className="text-xs font-mono text-emerald-400 font-medium">
-            {((stats.totalVolume / (stats.avgVolume30 || 1)) * 100).toFixed(0)}% vs avg
-          </span>
-        </div>
-      </div>
-
-      {/* 4. Medium-Term Trend */}
-      <div className="p-4 rounded-xl surface-card flex flex-col justify-between gap-2">
-        <div className="flex items-center justify-between text-xs text-slate-400">
-          <span className="font-medium">50-Day Moving Average</span>
-          <span className="font-mono text-[11px]">{stats.latest.ema50 ? formatNPR(stats.latest.ema50) : '—'}</span>
-        </div>
-
-        <div className="flex items-baseline justify-between mt-1">
-          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            {stats.latest.close >= (stats.latest.ema50 ?? stats.latest.close)
-              ? 'Bullish (Above 50 MA)'
-              : 'Bearish (Below 50 MA)'}
-          </span>
-          <span className="text-xs font-mono text-slate-400">
-            {stats.latest.ema50
-              ? formatPercentage(((stats.latest.close - stats.latest.ema50) / stats.latest.ema50) * 100)
-              : '0.0%'}
-          </span>
-        </div>
-      </div>
+      </MetricCard>
     </div>
   );
 };

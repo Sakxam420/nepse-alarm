@@ -12,7 +12,7 @@ interface TabsProps<T extends string> {
   activeTab: T;
   onChange: (id: T) => void;
   className?: string;
-  variant?: 'pill' | 'underline' | 'buttons';
+  variant?: 'pill' | 'underline' | 'buttons' | 'segment';
 }
 
 export function Tabs<T extends string>({
@@ -24,23 +24,23 @@ export function Tabs<T extends string>({
 }: TabsProps<T>) {
   if (variant === 'underline') {
     return (
-      <div className={`flex items-center gap-6 border-b border-slate-800 ${className}`}>
+      <div className={`flex items-center gap-1 ${className}`}>
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab;
           return (
             <button
               key={tab.id}
               onClick={() => onChange(tab.id)}
-              className={`flex items-center gap-2 pb-3 text-xs font-semibold tracking-wide border-b-2 transition-all ${
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all ${
                 isActive
-                  ? 'border-cyan-400 text-cyan-400 shadow-sm'
+                  ? 'border-blue-400 text-white'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
               }`}
             >
               {tab.icon}
               <span>{tab.label}</span>
               {tab.badge !== undefined && (
-                <span className="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px] text-slate-400">
+                <span className="px-1.5 py-0.5 rounded-full bg-white/8 text-[10px] text-slate-400 font-mono">
                   {tab.badge}
                 </span>
               )}
@@ -51,26 +51,21 @@ export function Tabs<T extends string>({
     );
   }
 
+  // Default: pill / segment style
   return (
-    <div className={`flex items-center gap-1.5 p-1 bg-slate-900/80 border border-slate-800/80 rounded-xl ${className}`}>
+    <div className={`seg-control ${className}`}>
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         return (
           <button
             key={tab.id}
             onClick={() => onChange(tab.id)}
-            className={`flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg text-xs font-medium transition-all ${
-              isActive
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm font-semibold'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
+            className={`seg-btn ${isActive ? 'active' : ''}`}
           >
-            {tab.icon}
+            {tab.icon && <span>{tab.icon}</span>}
             <span>{tab.label}</span>
             {tab.badge !== undefined && (
-              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${isActive ? 'bg-cyan-500/30 text-cyan-200' : 'bg-slate-800 text-slate-400'}`}>
-                {tab.badge}
-              </span>
+              <span className="ml-1 text-[10px] font-mono opacity-60">{tab.badge}</span>
             )}
           </button>
         );

@@ -4,81 +4,44 @@ import { X } from 'lucide-react';
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title: string;
-  subtitle?: string;
-  icon?: React.ReactNode;
+  title?: string;
   children: React.ReactNode;
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
   title,
-  subtitle,
-  icon,
   children,
-  maxWidth = 'lg',
+  size = 'md',
 }) => {
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    if (isOpen) document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
-  const maxWidthClasses = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-2xl',
-    '2xl': 'max-w-4xl',
-  }[maxWidth];
+  const widths = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-[#050811]/80 backdrop-blur-md transition-opacity animate-fadeIn" 
-        onClick={onClose}
-      />
-
-      {/* Modal Container */}
-      <div 
-        className={`relative w-full ${maxWidthClasses} glass-panel-elevated rounded-2xl border border-slate-700/60 shadow-2xl p-6 overflow-hidden z-10 animate-scaleUp`}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className={`relative w-full ${widths[size]} card p-0 shadow-2xl fade-in overflow-hidden`}
+        style={{ background: '#161b27' }}
       >
-        {/* Modal Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-slate-800/80 mb-5">
-          <div className="flex items-center gap-3">
-            {icon && (
-              <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-                {icon}
-              </div>
-            )}
-            <div>
-              <h2 className="text-lg font-bold text-white tracking-tight">{title}</h2>
-              {subtitle && <p className="text-xs text-slate-400 font-mono mt-0.5">{subtitle}</p>}
-            </div>
+        {title && (
+          <div className="flex items-center justify-between px-5 py-4 border-b border-white/7">
+            <span className="font-semibold text-sm text-white">{title}</span>
+            <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-            aria-label="Close Modal"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Modal Body */}
-        <div className="max-h-[75vh] overflow-y-auto pr-1">
-          {children}
-        </div>
+        )}
+        <div>{children}</div>
       </div>
     </div>
   );

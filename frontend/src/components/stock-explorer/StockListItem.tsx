@@ -1,7 +1,6 @@
 import React from 'react';
 import { Star, ChevronRight } from 'lucide-react';
 import { Company } from '../../types/stock';
-import { Badge } from '../common/Badge';
 
 interface StockListItemProps {
   company: Company;
@@ -12,61 +11,36 @@ interface StockListItemProps {
 }
 
 export const StockListItem: React.FC<StockListItemProps> = ({
-  company,
-  isSelected,
-  isFavorite,
-  onSelect,
-  onToggleFavorite,
-}) => {
-  return (
-    <div
-      onClick={() => onSelect(company.symbol)}
-      className={`group relative flex items-center justify-between p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
-        isSelected
-          ? 'bg-slate-850 border-emerald-500/50 text-white shadow-sm'
-          : 'bg-slate-900/60 border-slate-800/80 hover:bg-slate-850 hover:border-slate-700/80 text-slate-300'
-      }`}
-    >
-      <div className="flex items-center gap-2.5 overflow-hidden">
-        {/* Star */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFavorite(company.symbol);
-          }}
-          className={`p-1 rounded-md transition-colors ${
-            isFavorite ? 'text-amber-400' : 'text-slate-600 hover:text-slate-400'
-          }`}
-          title={isFavorite ? 'Remove from favorites' : 'Star to watchlist'}
-        >
-          <Star className={`h-3.5 w-3.5 ${isFavorite ? 'fill-amber-400' : ''}`} />
-        </button>
-
-        {/* Ticker & Name */}
-        <div className="flex flex-col min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span
-              className={`font-mono font-bold text-sm tracking-tight transition-colors ${
-                isSelected ? 'text-emerald-400' : 'text-white group-hover:text-emerald-300'
-              }`}
-            >
-              {company.symbol}
-            </span>
-            <Badge variant="neutral" size="sm">
-              {company.sector.slice(0, 5)}
-            </Badge>
-          </div>
-          <span className="text-[11px] text-slate-400 font-medium truncate max-w-[140px] sm:max-w-[170px]">
-            {company.name}
-          </span>
+  company, isSelected, isFavorite, onSelect, onToggleFavorite,
+}) => (
+  <div
+    onClick={() => onSelect(company.symbol)}
+    className="flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer group transition-colors"
+    style={{
+      background: isSelected ? 'rgba(79,142,247,0.1)' : 'transparent',
+      border: `1px solid ${isSelected ? 'rgba(79,142,247,0.25)' : 'transparent'}`,
+    }}
+    onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'; }}
+    onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+  >
+    <div className="flex items-center gap-2.5 min-w-0">
+      <button
+        onClick={e => { e.stopPropagation(); onToggleFavorite(company.symbol); }}
+        className="shrink-0 transition-colors"
+        style={{ color: isFavorite ? '#fbbf24' : '#334155' }}
+      >
+        <Star className={`h-3.5 w-3.5 ${isFavorite ? 'fill-amber-400' : ''}`} />
+      </button>
+      <div className="min-w-0">
+        <div className="text-sm font-semibold truncate" style={{ color: isSelected ? '#7bb3ff' : '#e2e8f0' }}>
+          {company.symbol}
         </div>
+        <div className="text-[11px] truncate" style={{ color: '#475569' }}>{company.name}</div>
       </div>
-
-      <ChevronRight
-        className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
-          isSelected ? 'text-emerald-400' : 'text-slate-600 group-hover:text-slate-400'
-        }`}
-      />
     </div>
-  );
-};
+    <ChevronRight
+      className="h-3.5 w-3.5 shrink-0 transition-opacity"
+      style={{ color: isSelected ? '#7bb3ff' : '#334155', opacity: isSelected ? 1 : 0 }}
+    />
+  </div>
+);

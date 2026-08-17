@@ -1,8 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { Search, Star } from 'lucide-react';
-import { Modal } from '../common/Modal';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Search, X, Star } from 'lucide-react';
 import { Company } from '../../types/stock';
-import { Badge } from '../common/Badge';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -15,129 +13,96 @@ interface SearchModalProps {
 }
 
 export const SearchModal: React.FC<SearchModalProps> = ({
-  isOpen,
-  onClose,
-  companies,
-  selectedSymbol,
-  onSelectSymbol,
-  watchlist,
-  onToggleFavorite,
+  isOpen, onClose, companies, selectedSymbol, onSelectSymbol, watchlist, onToggleFavorite,
 }) => {
   const [query, setQuery] = useState('');
-  const [activeSector, setActiveSector] = useState('All');
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const sectors = useMemo(() => {
-    const set = new Set(companies.map((c) => c.sector));
-    return ['All', ...Array.from(set)];
-  }, [companies]);
+  useEffect(() => {
+    if (isOpen) {
+      setQuery('');
+      setTimeout(() => inputRef.current?.focus(), 80);
+    }
+  }, [isOpen]);
 
-  const filtered = useMemo(() => {
-    return companies.filter((c) => {
-      const matchesSearch =
-        c.symbol.toLowerCase().includes(query.toLowerCase()) ||
-        c.name.toLowerCase().includes(query.toLowerCase());
-      const matchesSector = activeSector === 'All' || c.sector === activeSector;
-      return matchesSearch && matchesSector;
-    });
-  }, [companies, query, activeSector]);
+  const results = useMemo(() => {
+    if (!query.trim()) return companies.slice(0, 20);
+    const q = query.toLowerCase();
+    return companies.filter(c =>
+      c.symbol.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)
+    ).slice(0, 15);
+  }, [query, companies]);
 
-  const handleSelect = (symbol: string) => {
-    onSelectSymbol(symbol);
-    onClose();
-    setQuery('');
-  };
+  if (!isOpen) return null;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Security Lookup"
-      subtitle="Search NEPSE listed companies, sectors, and symbols"
-      icon={<Search className="h-5 w-5" />}
-      maxWidth="xl"
-    >
-      <div className="flex flex-col gap-4">
-        {/* Search Input */}
-        <div className="relative">
-          <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] px-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="relative w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden fade-in"
+        style={{ background: '#161b27', border: '1px solid rgba(255,255,255,0.09)' }}
+      >
+        {/* Search input */}
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+          <Search className="h-4 w-4 shrink-0" style={{ color: '#475569' }} />
           <input
-            type="text"
-            placeholder="Type symbol (e.g., NABIL, AHPC) or company name..."
+            ref={inputRef}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            autoFocus
-            className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/80 focus:ring-1 focus:ring-cyan-500/50 font-medium transition-all"
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search by symbol or company name..."
+            className="flex-1 bg-transparent text-sm text-white placeholder-slate-500 outline-none"
+            onKeyDown={e => {
+              if (e.key === 'Escape') onClose();
+              if (e.key === 'Enter' && results.length > 0) {
+                onSelectSymbol(results[0].symbol);
+                onClose();
+              }
+            }}
           />
-        </div>
-
-        {/* Sector Quick Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-          {sectors.map((sec) => (
-            <button
-              key={sec}
-              onClick={() => setActiveSector(sec)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                activeSector === sec
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
-                  : 'bg-slate-900/60 text-slate-400 border border-slate-800 hover:text-slate-200'
-              }`}
-            >
-              {sec}
+          {query && (
+            <button onClick={() => setQuery('')} className="text-slate-500 hover:text-white transition-colors">
+              <X className="h-4 w-4" />
             </button>
-          ))}
+          )}
         </div>
 
-        {/* Results List */}
-        <div className="flex flex-col gap-1.5 max-h-[380px] overflow-y-auto pr-1">
-          {filtered.length === 0 ? (
-            <div className="py-12 text-center text-slate-500 text-sm">
-              No securities match your search criteria.
-            </div>
+        {/* Results */}
+        <div className="max-h-[380px] overflow-y-auto py-2">
+          {results.length === 0 ? (
+            <div className="py-10 text-center text-sm text-slate-500">No results found</div>
           ) : (
-            filtered.map((company) => {
-              const isSelected = selectedSymbol === company.symbol;
+            results.map(company => {
+              const isSelected = company.symbol === selectedSymbol;
               const isFav = watchlist.includes(company.symbol);
-
               return (
                 <div
                   key={company.symbol}
-                  onClick={() => handleSelect(company.symbol)}
-                  className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer group ${
-                    isSelected
-                      ? 'bg-cyan-500/10 border-cyan-500/40 text-white'
-                      : 'bg-slate-900/40 border-slate-800/60 hover:bg-slate-850 hover:border-slate-700 text-slate-300'
-                  }`}
+                  onClick={() => { onSelectSymbol(company.symbol); onClose(); }}
+                  className="flex items-center justify-between px-4 py-2.5 cursor-pointer transition-colors group"
+                  style={{ background: isSelected ? 'rgba(79,142,247,0.08)' : 'transparent' }}
+                  onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'; }}
+                  onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                 >
                   <div className="flex items-center gap-3">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleFavorite(company.symbol);
-                      }}
-                      className={`p-1 rounded hover:bg-slate-800 transition-colors ${
-                        isFav ? 'text-amber-400' : 'text-slate-600 hover:text-slate-400'
-                      }`}
-                      title={isFav ? 'Remove from Watchlist' : 'Add to Watchlist'}
-                    >
-                      <Star className={`h-4 w-4 ${isFav ? 'fill-amber-400' : ''}`} />
-                    </button>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-white tracking-tight group-hover:text-cyan-400 transition-colors">
-                          {company.symbol}
-                        </span>
-                        <Badge variant="sector">{company.sector}</Badge>
-                      </div>
-                      <span className="text-xs text-slate-400 truncate max-w-sm">
-                        {company.name}
-                      </span>
+                    <div className="h-8 w-8 rounded-lg flex items-center justify-center text-xs font-bold" style={{ background: 'rgba(255,255,255,0.05)', color: isSelected ? '#7bb3ff' : '#94a3b8' }}>
+                      {company.symbol.slice(0, 2)}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-white">{company.symbol}</div>
+                      <div className="text-xs text-slate-400">{company.name}</div>
                     </div>
                   </div>
-
-                  <div className="text-right flex items-center gap-2">
-                    <span className="text-xs font-mono text-slate-400 group-hover:text-cyan-300">
-                      View Chart →
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] px-2 py-0.5 rounded-md text-slate-400" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                      {company.sector}
                     </span>
+                    <button
+                      onClick={e => { e.stopPropagation(); onToggleFavorite(company.symbol); }}
+                      className="p-1 rounded transition-colors"
+                      style={{ color: isFav ? '#fbbf24' : '#475569' }}
+                    >
+                      <Star className={`h-3.5 w-3.5 ${isFav ? 'fill-amber-400' : ''}`} />
+                    </button>
                   </div>
                 </div>
               );
@@ -145,12 +110,15 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           )}
         </div>
 
-        {/* Footer Hint */}
-        <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] font-mono text-slate-500">
-          <span>Tip: Press ESC to close</span>
-          <span>Showing {filtered.length} of {companies.length} securities</span>
+        {/* Hint footer */}
+        <div className="px-4 py-2.5 border-t flex items-center justify-between text-[11px] text-slate-500" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+          <span>{results.length} of {companies.length} securities</span>
+          <div className="flex items-center gap-3">
+            <span><kbd className="font-mono">↵</kbd> to select</span>
+            <span><kbd className="font-mono">ESC</kbd> to close</span>
+          </div>
         </div>
       </div>
-    </Modal>
+    </div>
   );
 };

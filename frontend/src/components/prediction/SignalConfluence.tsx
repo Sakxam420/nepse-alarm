@@ -1,94 +1,56 @@
 import React from 'react';
-import { Layers, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Prediction } from '../../types/stock';
-import { Badge } from '../common/Badge';
 
 interface SignalConfluenceProps {
   prediction: Prediction | null;
 }
 
+type Trend = 'Bullish' | 'Bearish' | 'Neutral';
+
+const HorizonCard = ({ label, timeframe, trend }: { label: string; timeframe: string; trend: Trend }) => {
+  const isBull = trend === 'Bullish';
+  const isBear = trend === 'Bearish';
+  const color = isBull ? '#4ade80' : isBear ? '#f87171' : '#fbbf24';
+  const bg = isBull ? 'rgba(34,197,94,0.08)' : isBear ? 'rgba(239,68,68,0.08)' : 'rgba(251,191,36,0.08)';
+
+  return (
+    <div className="flex-1 rounded-xl p-4 flex flex-col items-center gap-2 text-center" style={{ background: bg, border: `1px solid ${color}22` }}>
+      <span className="text-[11px] font-medium uppercase tracking-wide" style={{ color: '#64748b' }}>{label}</span>
+      <span className="text-[10px]" style={{ color: '#475569' }}>{timeframe}</span>
+      <div className="h-8 w-8 rounded-full flex items-center justify-center" style={{ background: `${color}15` }}>
+        {isBull && <TrendingUp className="h-4 w-4" style={{ color }} />}
+        {isBear && <TrendingDown className="h-4 w-4" style={{ color }} />}
+        {!isBull && !isBear && <Minus className="h-4 w-4" style={{ color }} />}
+      </div>
+      <span className="text-sm font-bold" style={{ color }}>{trend}</span>
+    </div>
+  );
+};
+
 export const SignalConfluence: React.FC<SignalConfluenceProps> = ({ prediction }) => {
-  const consensus = prediction?.timeframeConsensus || {
-    shortTerm: 'Bullish',
-    mediumTerm: 'Neutral',
-    macroTrend: 'Bullish',
-  };
-
-  const renderIcon = (trend: string) => {
-    if (trend === 'Bullish') return <TrendingUp className="h-4 w-4 text-emerald-400" />;
-    if (trend === 'Bearish') return <TrendingDown className="h-4 w-4 text-rose-400" />;
-    return <Minus className="h-4 w-4 text-amber-400" />;
-  };
-
-  const getVariant = (trend: string): 'emerald' | 'rose' | 'amber' => {
-    if (trend === 'Bullish') return 'emerald';
-    if (trend === 'Bearish') return 'rose';
-    return 'amber';
+  const consensus = prediction?.timeframeConsensus ?? {
+    shortTerm: 'Bullish' as Trend,
+    mediumTerm: 'Neutral' as Trend,
+    macroTrend: 'Bullish' as Trend,
   };
 
   return (
-    <div className="p-5 sm:p-6 rounded-2xl surface-card flex flex-col justify-between gap-4">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
-            <Layers className="h-4 w-4" />
-          </div>
-          <div>
-            <h3 className="font-bold text-sm text-white tracking-tight">Time Horizon Consensus</h3>
-            <span className="text-[10px] text-slate-400 block font-mono">
-              Short, Medium & Long-term Signals
-            </span>
-          </div>
-        </div>
+    <div className="card p-5 flex flex-col gap-4">
+      <div>
+        <div className="text-sm font-semibold text-white">Time Horizon Signals</div>
+        <div className="text-[11px] mt-0.5" style={{ color: '#475569' }}>Short, medium, and long-term outlook</div>
       </div>
 
-      {/* 3 Horizon Cards */}
-      <div className="grid grid-cols-3 gap-2.5 py-1">
-        {/* Short Term */}
-        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center text-center gap-1.5">
-          <span className="text-[10px] font-mono text-slate-400 uppercase font-semibold">
-            Short (5D)
-          </span>
-          <div className="p-1.5 rounded-lg bg-slate-800">
-            {renderIcon(consensus.shortTerm)}
-          </div>
-          <Badge variant={getVariant(consensus.shortTerm)} size="sm">
-            {consensus.shortTerm}
-          </Badge>
-        </div>
-
-        {/* Medium Term */}
-        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center text-center gap-1.5">
-          <span className="text-[10px] font-mono text-slate-400 uppercase font-semibold">
-            Medium (20D)
-          </span>
-          <div className="p-1.5 rounded-lg bg-slate-800">
-            {renderIcon(consensus.mediumTerm)}
-          </div>
-          <Badge variant={getVariant(consensus.mediumTerm)} size="sm">
-            {consensus.mediumTerm}
-          </Badge>
-        </div>
-
-        {/* Macro Trend */}
-        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center text-center gap-1.5">
-          <span className="text-[10px] font-mono text-slate-400 uppercase font-semibold">
-            Macro (50D)
-          </span>
-          <div className="p-1.5 rounded-lg bg-slate-800">
-            {renderIcon(consensus.macroTrend)}
-          </div>
-          <Badge variant={getVariant(consensus.macroTrend)} size="sm">
-            {consensus.macroTrend}
-          </Badge>
-        </div>
+      <div className="flex gap-3">
+        <HorizonCard label="Short" timeframe="~5 days" trend={consensus.shortTerm} />
+        <HorizonCard label="Medium" timeframe="~20 days" trend={consensus.mediumTerm} />
+        <HorizonCard label="Long" timeframe="~50 days" trend={consensus.macroTrend} />
       </div>
 
-      {/* Footer */}
-      <div className="pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 text-center">
-        <span>Consensus is bullish across short & long horizons.</span>
-      </div>
+      <p className="text-[11px] leading-relaxed" style={{ color: '#334155' }}>
+        Signals are derived from EMA, RSI, and MACD readings across different lookback windows.
+      </p>
     </div>
   );
 };

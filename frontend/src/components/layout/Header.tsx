@@ -1,168 +1,142 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Search,
-  Bell,
-  Menu,
-  X,
-  Cpu,
-  TrendingUp,
-  BarChart3,
-  Layers,
-  SlidersHorizontal,
-} from 'lucide-react';
+import { TrendingUp, Search, Bell, Menu, X, BarChart2, Cpu, Activity, Globe } from 'lucide-react';
 import { getMarketStatus } from '../../utils/mockData';
 
-export type MainNavTab = 'overview' | 'ai_insights' | 'technical' | 'sectors';
+export type NavTab = 'overview' | 'ai' | 'technical' | 'sectors';
 
 interface HeaderProps {
-  activeTab: MainNavTab;
-  onChangeTab: (tab: MainNavTab) => void;
+  activeTab: NavTab;
+  onChangeTab: (tab: NavTab) => void;
   onOpenSearch: () => void;
-  onOpenArchitecture: () => void;
   onOpenAlerts: () => void;
-  watchlistCount?: number;
+  onOpenArchitecture: () => void;
   mobileMenuOpen: boolean;
   onToggleMobileMenu: () => void;
+  watchlistCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onChangeTab,
   onOpenSearch,
-  onOpenArchitecture,
   onOpenAlerts,
+  onOpenArchitecture,
   mobileMenuOpen,
   onToggleMobileMenu,
 }) => {
-  const [marketStatus, setMarketStatus] = useState(getMarketStatus());
-
+  const [market, setMarket] = useState(getMarketStatus());
   useEffect(() => {
-    const timer = setInterval(() => {
-      setMarketStatus(getMarketStatus());
-    }, 60000);
-    return () => clearInterval(timer);
+    const t = setInterval(() => setMarket(getMarketStatus()), 60_000);
+    return () => clearInterval(t);
   }, []);
 
-  const navItems = [
-    { id: 'overview' as MainNavTab, label: 'Overview & Chart', icon: <BarChart3 className="h-4 w-4" /> },
-    { id: 'ai_insights' as MainNavTab, label: 'AI Intelligence', icon: <Cpu className="h-4 w-4" /> },
-    { id: 'technical' as MainNavTab, label: 'Technical Scorecard', icon: <SlidersHorizontal className="h-4 w-4" /> },
-    { id: 'sectors' as MainNavTab, label: 'Sector Matrix', icon: <Layers className="h-4 w-4" /> },
+  const tabs: { id: NavTab; label: string; icon: React.ReactNode }[] = [
+    { id: 'overview',  label: 'Overview',   icon: <BarChart2 className="h-3.5 w-3.5" /> },
+    { id: 'ai',        label: 'AI Insights', icon: <Cpu className="h-3.5 w-3.5" /> },
+    { id: 'technical', label: 'Technical',   icon: <Activity className="h-3.5 w-3.5" /> },
+    { id: 'sectors',   label: 'Sectors',     icon: <Globe className="h-3.5 w-3.5" /> },
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0b0f19]/90 backdrop-blur-lg border-b border-slate-800/80 px-4 sm:px-6 py-3 transition-all">
-      <div className="max-w-[1720px] mx-auto flex items-center justify-between gap-4">
+    <header
+      className="sticky top-0 z-40 border-b"
+      style={{ background: 'rgba(14,17,23,0.9)', backdropFilter: 'blur(16px)', borderColor: 'rgba(255,255,255,0.07)' }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
         
-        {/* Left: Brand & Market Status */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <TrendingUp className="h-4 w-4" />
+        {/* Brand */}
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(79,142,247,0.15)', border: '1px solid rgba(79,142,247,0.25)' }}>
+              <TrendingUp className="h-4 w-4 text-blue-400" />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-base font-bold text-white tracking-tight font-sans">
-                NEPSE<span className="text-emerald-400">.AI</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Clean Market Status Pill */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-[11px] font-mono">
-            <span className={`h-1.5 w-1.5 rounded-full ${marketStatus.isOpen ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-            <span className={marketStatus.isOpen ? 'text-emerald-400 font-medium' : 'text-amber-400 font-medium'}>
-              {marketStatus.statusText}
+            <span className="text-sm font-bold text-white tracking-tight">
+              NEPSE<span className="text-blue-400">.AI</span>
             </span>
           </div>
+
+          {/* Nav tabs — desktop */}
+          <nav className="hidden md:flex items-center gap-1">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onChangeTab(tab.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  style={{
+                    background: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
+                    color: isActive ? '#f1f5f9' : '#64748b',
+                  }}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
-        {/* Center: Clean Navigation Bar (Desktop) */}
-        <nav className="hidden lg:flex items-center gap-1 p-1 rounded-xl bg-slate-900/90 border border-slate-800/80">
-          {navItems.map((item) => {
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => onChangeTab(item.id)}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  isActive
-                    ? 'bg-slate-800 text-white font-semibold shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Right: Search, Architecture Modal & Actions */}
-        <div className="flex items-center gap-2.5">
-          {/* Quick Search Button */}
-          <button
-            onClick={onOpenSearch}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition-all text-xs font-medium group"
+        {/* Right actions */}
+        <div className="flex items-center gap-2">
+          {/* Market pill */}
+          <div
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
           >
-            <Search className="h-3.5 w-3.5 text-slate-400 group-hover:text-white" />
-            <span className="hidden sm:inline">Search Stock</span>
-            <kbd className="hidden md:inline text-[10px] font-mono px-1.5 py-0.2 bg-slate-800 text-slate-400 rounded border border-slate-700">
-              ⌘K
-            </kbd>
+            <span className={`h-1.5 w-1.5 rounded-full ${market.isOpen ? 'bg-green-400 pulse-dot' : 'bg-slate-500'}`} />
+            <span className={market.isOpen ? 'text-green-400' : 'text-slate-400'}>
+              {market.isOpen ? 'Open' : 'Closed'}
+            </span>
+          </div>
+
+          {/* Search */}
+          <button onClick={onOpenSearch} className="btn text-xs gap-2">
+            <Search className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Search</span>
+            <kbd className="hidden lg:inline text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>⌘K</kbd>
           </button>
 
-          {/* Model Architecture Guide */}
-          <button
-            onClick={onOpenArchitecture}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-white transition-all text-xs font-medium"
-            title="View Academic ML Architecture"
-          >
-            <Cpu className="h-3.5 w-3.5 text-emerald-400" />
-            <span>AI Specs</span>
+          {/* AI Specs */}
+          <button onClick={onOpenArchitecture} className="hidden sm:flex btn btn-accent text-xs gap-1.5">
+            <Cpu className="h-3.5 w-3.5" />
+            <span>AI Model</span>
           </button>
 
-          {/* Alerts Trigger */}
-          <button
-            onClick={onOpenAlerts}
-            className="p-2 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-400 hover:text-white transition-colors"
-            title="Price Alerts"
-            aria-label="Alerts"
-          >
-            <Bell className="h-4 w-4" />
+          {/* Alerts */}
+          <button onClick={onOpenAlerts} className="btn p-2 text-xs" style={{ width: 36, height: 36, justifyContent: 'center' }} title="Price Alerts">
+            <Bell className="h-3.5 w-3.5" />
           </button>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={onToggleMobileMenu}
-            className="lg:hidden p-2 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 hover:text-white"
-            aria-label="Toggle Navigation Drawer"
-          >
+          {/* Mobile hamburger */}
+          <button onClick={onToggleMobileMenu} className="md:hidden btn p-2 text-xs" style={{ width: 36, height: 36, justifyContent: 'center' }}>
             {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
         </div>
-
       </div>
 
-      {/* Mobile Tab Bar */}
-      <div className="flex lg:hidden items-center gap-1 overflow-x-auto pt-2 pb-0.5 no-scrollbar">
-        {navItems.map((item) => {
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onChangeTab(item.id)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
-                isActive
-                  ? 'bg-slate-800 text-white font-semibold'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Mobile nav drawer */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t px-4 py-3 flex gap-2 overflow-x-auto no-scrollbar" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => { onChangeTab(tab.id); onToggleMobileMenu(); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0"
+                style={{
+                  background: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
+                  color: isActive ? '#f1f5f9' : '#64748b',
+                }}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </header>
   );
 };

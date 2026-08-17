@@ -1,68 +1,64 @@
 import React from 'react';
-import { SlidersHorizontal, Info } from 'lucide-react';
+import { BarChart2 } from 'lucide-react';
 import { Prediction } from '../../types/stock';
 
 interface FeatureImportanceProps {
   prediction: Prediction | null;
 }
 
-export const FeatureImportance: React.FC<FeatureImportanceProps> = ({ prediction }) => {
-  const defaultFeatures: Record<string, number> = {
-    'Price Momentum (LSTM)': 0.40,
-    'RSI (14) Momentum': 0.25,
-    'MACD Trend Expansion': 0.18,
-    'EMA 50 Bias': 0.10,
-    'Trading Volume Delta': 0.07,
-  };
+const DEFAULT_FEATURES = [
+  { label: 'Price Momentum (LSTM sequence)', value: 0.40, color: '#60a5fa' },
+  { label: 'RSI (14) Momentum', value: 0.25, color: '#a78bfa' },
+  { label: 'MACD Trend Expansion', value: 0.18, color: '#34d399' },
+  { label: 'EMA 50 Trend Bias', value: 0.10, color: '#fbbf24' },
+  { label: 'Volume Accumulation', value: 0.07, color: '#f87171' },
+];
 
-  const features = prediction?.features && Object.keys(prediction.features).length > 0
-    ? prediction.features
-    : defaultFeatures;
+export const FeatureImportance: React.FC<FeatureImportanceProps> = ({ prediction }) => {
+  let features = DEFAULT_FEATURES;
+  if (prediction?.features && Object.keys(prediction.features).length > 0) {
+    features = Object.entries(prediction.features).slice(0, 5).map(([label, value], i) => ({
+      label,
+      value: Number(value),
+      color: ['#60a5fa', '#a78bfa', '#34d399', '#fbbf24', '#f87171'][i] ?? '#60a5fa',
+    }));
+  }
 
   return (
-    <div className="p-5 sm:p-6 rounded-2xl surface-card flex flex-col justify-between gap-4">
+    <div className="card p-5 flex flex-col gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
-            <SlidersHorizontal className="h-4 w-4" />
-          </div>
-          <div>
-            <h3 className="font-bold text-sm text-white tracking-tight">Key Factors Driving Prediction</h3>
-            <span className="text-[10px] text-slate-400 block font-mono">
-              Explainable AI (XAI) Weights
-            </span>
-          </div>
+      <div className="flex items-center gap-2.5">
+        <div className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.2)' }}>
+          <BarChart2 className="h-4 w-4 text-blue-400" />
+        </div>
+        <div>
+          <div className="text-sm font-semibold text-white">Key Factors</div>
+          <div className="text-[11px]" style={{ color: '#475569' }}>What drives this prediction</div>
         </div>
       </div>
 
-      {/* Progress Bars */}
-      <div className="flex flex-col gap-3 py-1">
-        {Object.entries(features).map(([name, weight]) => {
-          const pct = Math.round(weight * 100);
-
-          return (
-            <div key={name} className="flex flex-col gap-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-300 font-medium">{name}</span>
-                <span className="text-slate-400 font-mono font-bold">{pct}%</span>
-              </div>
-              <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800">
-                <div
-                  style={{ width: `${pct}%` }}
-                  className="h-full bg-blue-500 rounded-full transition-all duration-700"
-                />
-              </div>
+      {/* Factor bars */}
+      <div className="flex flex-col gap-3">
+        {features.map((f, i) => (
+          <div key={i}>
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="font-medium" style={{ color: '#94a3b8' }}>{f.label}</span>
+              <span className="font-mono font-semibold text-white">{Math.round(f.value * 100)}%</span>
             </div>
-          );
-        })}
+            <div className="h-1.5 w-full rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }}>
+              <div
+                style={{ width: `${Math.round(f.value * 100)}%`, background: f.color, transition: 'width 0.6s ease' }}
+                className="h-full rounded-full"
+              />
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Footer */}
-      <div className="pt-2 border-t border-slate-800/80 flex items-center gap-1.5 text-[11px] text-slate-400">
-        <Info className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-        <span>Higher percentage indicates stronger impact on the forecast.</span>
-      </div>
+      {/* Note */}
+      <p className="text-[11px] leading-relaxed" style={{ color: '#334155' }}>
+        Higher % = stronger influence on the final trend forecast.
+      </p>
     </div>
   );
 };

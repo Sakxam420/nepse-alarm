@@ -1,14 +1,6 @@
 import React from 'react';
-import {
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  RefreshCw,
-  Cpu,
-  Info,
-} from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, RefreshCw, Info, Cpu } from 'lucide-react';
 import { Prediction } from '../../types/stock';
-import { Badge } from '../common/Badge';
 
 interface PredictionCardProps {
   prediction: Prediction | null;
@@ -18,136 +10,107 @@ interface PredictionCardProps {
 }
 
 export const PredictionCard: React.FC<PredictionCardProps> = ({
-  prediction,
-  training,
-  onRetrain,
-  onOpenArchitecture,
+  prediction, training, onRetrain, onOpenArchitecture,
 }) => {
-  const trend = prediction?.trend || 'Neutral';
-  const confidence = prediction?.confidence || 50;
+  const trend = prediction?.trend ?? 'Neutral';
+  const confidence = prediction?.confidence ?? 50;
   const isBullish = trend === 'Bullish';
   const isBearish = trend === 'Bearish';
 
-  const badgeVariant = isBullish ? 'emerald' : isBearish ? 'rose' : 'amber';
-
-  const probs = prediction?.probabilities || {
-    bullish: isBullish ? 70 : 15,
-    neutral: isBullish ? 20 : isBearish ? 20 : 60,
-    bearish: isBearish ? 65 : 10,
+  const probs = prediction?.probabilities ?? {
+    bullish: isBullish ? 68 : 16,
+    neutral: isBullish ? 22 : isBearish ? 22 : 60,
+    bearish: isBearish ? 62 : 12,
   };
 
+  const trendColor = isBullish ? '#4ade80' : isBearish ? '#f87171' : '#fbbf24';
+  const ringOffset = 251.2 - (251.2 * confidence / 100);
+
   return (
-    <div className="p-5 sm:p-6 rounded-2xl surface-card flex flex-col justify-between gap-5 transition-all">
+    <div className="card p-5 flex flex-col gap-5">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
-            <Cpu className="h-4 w-4" />
+          <div className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(79,142,247,0.12)', border: '1px solid rgba(79,142,247,0.2)' }}>
+            <Cpu className="h-4 w-4 text-blue-400" />
           </div>
           <div>
-            <h3 className="font-bold text-sm text-white tracking-tight">AI Recommendation</h3>
-            <span className="text-[10px] text-slate-400 block font-mono">
-              LSTM + XGBoost Engine
-            </span>
+            <div className="text-sm font-semibold text-white">AI Forecast</div>
+            <div className="text-[11px]" style={{ color: '#475569' }}>LSTM + XGBoost</div>
           </div>
         </div>
-        <Badge variant={badgeVariant} size="sm">
-          {prediction?.source || 'ML ENGINE'}
-        </Badge>
+        <span
+          className="text-[11px] font-medium px-2.5 py-1 rounded-full"
+          style={{ background: 'rgba(255,255,255,0.05)', color: '#64748b', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          {prediction?.source ?? 'ML Engine'}
+        </span>
       </div>
 
-      {/* Signal Verdict & Circular Progress */}
-      <div className="flex items-center justify-around py-2 gap-4">
+      {/* Radial dial + verdict */}
+      <div className="flex items-center gap-6">
         {/* Ring */}
-        <div className="relative h-24 w-24 flex items-center justify-center shrink-0">
-          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+        <div className="relative h-[88px] w-[88px] shrink-0">
+          <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.06)" strokeWidth="8" fill="transparent" />
             <circle
-              cx="50"
-              cy="50"
-              r="40"
-              className="text-slate-800"
-              strokeWidth="6"
-              stroke="currentColor"
-              fill="transparent"
-            />
-            <circle
-              cx="50"
-              cy="50"
-              r="40"
-              className={isBullish ? 'text-emerald-400' : isBearish ? 'text-rose-400' : 'text-amber-400'}
-              strokeWidth="6"
-              strokeDasharray={251.2}
-              strokeDashoffset={251.2 - (251.2 * confidence) / 100}
+              cx="50" cy="50" r="40"
+              stroke={trendColor}
+              strokeWidth="8"
+              strokeDasharray="251.2"
+              strokeDashoffset={ringOffset}
               strokeLinecap="round"
-              stroke="currentColor"
               fill="transparent"
-              style={{ transition: 'stroke-dashoffset 0.8s ease-in-out' }}
+              style={{ transition: 'stroke-dashoffset 0.8s ease' }}
             />
           </svg>
-          <div className="absolute flex flex-col items-center">
-            <span className="text-lg font-mono font-bold text-white">
-              {confidence.toFixed(0)}%
-            </span>
-            <span className="text-[9px] uppercase text-slate-400 font-semibold tracking-wider">
-              CONFIDENCE
-            </span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-lg font-bold text-white font-mono">{confidence.toFixed(0)}%</span>
+            <span className="text-[9px] uppercase tracking-wide" style={{ color: '#475569' }}>conf.</span>
           </div>
         </div>
 
-        {/* Big Verdict */}
-        <div className="flex flex-col gap-1">
-          <span className="text-[11px] uppercase tracking-wider font-mono text-slate-400">
-            Expected Trend
-          </span>
-          <div className="flex items-center gap-1.5">
-            {isBullish && <TrendingUp className="h-6 w-6 text-emerald-400" />}
-            {isBearish && <TrendingDown className="h-6 w-6 text-rose-400" />}
-            {!isBullish && !isBearish && <Activity className="h-5 w-5 text-amber-400" />}
-            <span
-              className={`text-2xl font-black tracking-tight ${
-                isBullish ? 'text-emerald-400' : isBearish ? 'text-rose-400' : 'text-amber-400'
-              }`}
-            >
-              {trend}
-            </span>
+        {/* Trend */}
+        <div>
+          <div className="text-[11px] uppercase tracking-wider mb-1" style={{ color: '#475569' }}>Expected Direction</div>
+          <div className="flex items-center gap-2 mb-1.5">
+            {isBullish && <TrendingUp className="h-5 w-5" style={{ color: trendColor }} />}
+            {isBearish && <TrendingDown className="h-5 w-5" style={{ color: trendColor }} />}
+            {!isBullish && !isBearish && <Activity className="h-5 w-5" style={{ color: trendColor }} />}
+            <span className="text-xl font-bold" style={{ color: trendColor }}>{trend}</span>
           </div>
-          <span className="text-xs text-slate-300 italic max-w-[200px] line-clamp-2 mt-0.5">
-            "{prediction?.message}"
-          </span>
+          <p className="text-xs leading-relaxed max-w-[180px]" style={{ color: '#94a3b8' }}>
+            {prediction?.message ?? 'Analyzing historical patterns…'}
+          </p>
         </div>
       </div>
 
-      {/* Probabilities */}
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
-          <span className="text-emerald-400">Bullish: {probs.bullish}%</span>
-          <span className="text-amber-400">Neutral: {probs.neutral}%</span>
-          <span className="text-rose-400">Bearish: {probs.bearish}%</span>
+      {/* Probability bar */}
+      <div>
+        <div className="flex justify-between text-[11px] font-mono mb-1.5" style={{ color: '#64748b' }}>
+          <span className="text-green-400">{probs.bullish}% Bull</span>
+          <span className="text-slate-400">{probs.neutral}% Neutral</span>
+          <span className="text-red-400">{probs.bearish}% Bear</span>
         </div>
-        <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden flex border border-slate-800">
-          <div style={{ width: `${probs.bullish}%` }} className="bg-emerald-500 transition-all duration-500" />
-          <div style={{ width: `${probs.neutral}%` }} className="bg-amber-500 transition-all duration-500" />
-          <div style={{ width: `${probs.bearish}%` }} className="bg-rose-500 transition-all duration-500" />
+        <div className="h-1.5 w-full rounded-full overflow-hidden flex" style={{ background: 'rgba(255,255,255,0.04)' }}>
+          <div style={{ width: `${probs.bullish}%`, background: '#22c55e' }} className="transition-all duration-700" />
+          <div style={{ width: `${probs.neutral}%`, background: '#64748b' }} className="transition-all duration-700" />
+          <div style={{ width: `${probs.bearish}%`, background: '#ef4444' }} className="transition-all duration-700" />
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+      {/* Actions */}
+      <div className="flex gap-2 pt-1 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
         <button
           onClick={onRetrain}
           disabled={training}
-          className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-xs font-semibold text-slate-200 hover:text-white transition-all disabled:opacity-50"
+          className="btn flex-1 justify-center text-xs disabled:opacity-50"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${training ? 'animate-spin text-emerald-400' : ''}`} />
-          <span>{training ? 'Fitting Weights...' : 'Retrain Model'}</span>
+          <RefreshCw className={`h-3.5 w-3.5 ${training ? 'animate-spin text-blue-400' : ''}`} />
+          {training ? 'Training…' : 'Retrain Model'}
         </button>
-
-        <button
-          onClick={onOpenArchitecture}
-          className="p-2 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-400 hover:text-white transition-colors"
-          title="Explain AI Pipeline"
-        >
-          <Info className="h-4 w-4" />
+        <button onClick={onOpenArchitecture} className="btn text-xs px-3" title="View ML Architecture">
+          <Info className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>

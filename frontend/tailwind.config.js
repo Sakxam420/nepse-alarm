@@ -8,36 +8,34 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Outfit', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       colors: {
-        app: {
-          bg: '#0b0f19',
-          card: '#111827',
-          subtle: '#0f172a',
-          hover: '#151f32',
-          border: 'rgba(255, 255, 255, 0.06)',
-          'border-strong': 'rgba(255, 255, 255, 0.12)',
-        },
-        brand: {
-          green: '#10b981',
-          red: '#f43f5e',
-          amber: '#f59e0b',
-          blue: '#3b82f6',
-          purple: '#8b5cf6',
-          cyan: '#06b6d4',
-        }
+        base: '#0e1117',
+        card: '#161b27',
+        elevated: '#1a2035',
+        hover: '#1c2333',
+        accent: '#4f8ef7',
       },
-      animation: {
-        'marquee': 'marquee 40s linear infinite',
+      borderColor: {
+        DEFAULT: 'rgba(255,255,255,0.07)',
+        strong: 'rgba(255,255,255,0.13)',
       },
       keyframes: {
         marquee: {
           '0%': { transform: 'translateX(0%)' },
           '100%': { transform: 'translateX(-50%)' },
-        }
-      }
+        },
+        'fade-in': {
+          from: { opacity: '0', transform: 'translateY(8px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        marquee: 'marquee 45s linear infinite',
+        'fade-in': 'fade-in 0.25s ease forwards',
+      },
     },
   },
   plugins: [],

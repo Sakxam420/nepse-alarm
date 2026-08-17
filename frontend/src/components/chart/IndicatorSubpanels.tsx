@@ -1,18 +1,9 @@
 import React from 'react';
 import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  ComposedChart,
-  Line,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ReferenceLine,
+  ResponsiveContainer, AreaChart, Area,
+  ComposedChart, Line, Bar, XAxis, YAxis, Tooltip, ReferenceLine,
 } from 'recharts';
 import { PriceBar } from '../../types/stock';
-import { Badge } from '../common/Badge';
 
 interface IndicatorSubpanelsProps {
   data: PriceBar[];
@@ -20,149 +11,74 @@ interface IndicatorSubpanelsProps {
   showMACD: boolean;
 }
 
-export const IndicatorSubpanels: React.FC<IndicatorSubpanelsProps> = ({
-  data,
-  showRSI,
-  showMACD,
-}) => {
+const tooltipStyle = {
+  background: '#1a2035',
+  border: '1px solid rgba(255,255,255,0.09)',
+  borderRadius: 10,
+  fontSize: 11,
+  fontFamily: 'JetBrains Mono',
+};
+
+export const IndicatorSubpanels: React.FC<IndicatorSubpanelsProps> = ({ data, showRSI, showMACD }) => {
   if (!showRSI && !showMACD) return null;
 
   const latest = data.length > 0 ? data[data.length - 1] : null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-      {/* RSI (14) Panel */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
       {showRSI && (
-        <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex flex-col gap-2">
-          <div className="flex items-center justify-between text-xs font-mono">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-amber-400">RSI (14)</span>
-              <span className="text-[10px] text-slate-500">Momentum Oscillator</span>
-            </div>
-            {latest?.rsi14 !== null && latest?.rsi14 !== undefined && (
-              <Badge
-                variant={latest.rsi14 > 70 ? 'rose' : latest.rsi14 < 30 ? 'emerald' : 'amber'}
-                size="sm"
-              >
-                {latest.rsi14.toFixed(1)}{' '}
-                {latest.rsi14 > 70 ? '• OVERBOUGHT' : latest.rsi14 < 30 ? '• OVERSOLD' : '• NEUTRAL'}
-              </Badge>
+        <div className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.03)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold" style={{ color: '#fbbf24' }}>RSI (14)</span>
+            {latest?.rsi14 != null && (
+              <span className="text-xs font-mono font-bold" style={{
+                color: latest.rsi14 > 70 ? '#f87171' : latest.rsi14 < 30 ? '#4ade80' : '#fbbf24'
+              }}>
+                {latest.rsi14.toFixed(1)} · {latest.rsi14 > 70 ? 'Overbought' : latest.rsi14 < 30 ? 'Oversold' : 'Neutral'}
+              </span>
             )}
           </div>
-
-          <div className="h-[120px] w-full">
+          <div className="h-24">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={data} margin={{ top: 2, right: 4, left: -20, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="rsiGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
+                  <linearGradient id="rsiG" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#fbbf24" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="#fbbf24" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="dateFormatted" hide />
-                <YAxis
-                  domain={[0, 100]}
-                  ticks={[30, 50, 70]}
-                  tick={{ fontSize: 9, fill: '#64748b', fontFamily: 'monospace' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#090d16',
-                    borderColor: '#1e293b',
-                    borderRadius: '8px',
-                    fontSize: '11px',
-                    fontFamily: 'monospace',
-                  }}
-                />
-                <ReferenceLine
-                  y={70}
-                  stroke="#ef4444"
-                  strokeDasharray="2 2"
-                  strokeWidth={1}
-                  label={{ value: '70', position: 'insideTopRight', fill: '#ef4444', fontSize: 9 }}
-                />
-                <ReferenceLine
-                  y={30}
-                  stroke="#10b981"
-                  strokeDasharray="2 2"
-                  strokeWidth={1}
-                  label={{ value: '30', position: 'insideBottomRight', fill: '#10b981', fontSize: 9 }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="rsi14"
-                  stroke="#f59e0b"
-                  strokeWidth={1.8}
-                  fill="url(#rsiGradient)"
-                  dot={false}
-                  name="RSI 14"
-                />
+                <XAxis dataKey="dateLabel" hide />
+                <YAxis domain={[0, 100]} ticks={[30, 70]} tick={{ fontSize: 9, fill: '#334155' }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#94a3b8' }} />
+                <ReferenceLine y={70} stroke="#ef4444" strokeDasharray="2 2" strokeWidth={1} />
+                <ReferenceLine y={30} stroke="#22c55e" strokeDasharray="2 2" strokeWidth={1} />
+                <Area type="monotone" dataKey="rsi14" stroke="#fbbf24" strokeWidth={1.8} fill="url(#rsiG)" dot={false} name="RSI" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
       )}
 
-      {/* MACD (12, 26, 9) Panel */}
       {showMACD && (
-        <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex flex-col gap-2">
-          <div className="flex items-center justify-between text-xs font-mono">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-pink-400">MACD (12, 26, 9)</span>
-              <span className="text-[10px] text-slate-500">Trend & Momentum</span>
-            </div>
-            {latest?.macdHist !== null && latest?.macdHist !== undefined && (
-              <Badge variant={latest.macdHist >= 0 ? 'emerald' : 'rose'} size="sm">
+        <div className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.03)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold" style={{ color: '#f87171' }}>MACD (12,26,9)</span>
+            {latest?.macdHist != null && (
+              <span className="text-xs font-mono font-bold" style={{ color: latest.macdHist >= 0 ? '#4ade80' : '#f87171' }}>
                 Hist: {latest.macdHist >= 0 ? '+' : ''}{latest.macdHist.toFixed(2)}
-              </Badge>
+              </span>
             )}
           </div>
-
-          <div className="h-[120px] w-full">
+          <div className="h-24">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                <XAxis dataKey="dateFormatted" hide />
-                <YAxis
-                  tick={{ fontSize: 9, fill: '#64748b', fontFamily: 'monospace' }}
-                  axisLine={false}
-                  tickLine={false}
-                  domain={['auto', 'auto']}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#090d16',
-                    borderColor: '#1e293b',
-                    borderRadius: '8px',
-                    fontSize: '11px',
-                    fontFamily: 'monospace',
-                  }}
-                />
-                <ReferenceLine y={0} stroke="#334155" strokeWidth={1} />
-                <Bar
-                  dataKey="macdHist"
-                  name="Histogram"
-                  fill="#38bdf8"
-                  opacity={0.7}
-                  maxBarSize={6}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="macdLine"
-                  name="MACD"
-                  stroke="#ec4899"
-                  dot={false}
-                  strokeWidth={1.5}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="macdSignal"
-                  name="Signal"
-                  stroke="#8b5cf6"
-                  dot={false}
-                  strokeWidth={1.5}
-                />
+              <ComposedChart data={data} margin={{ top: 2, right: 4, left: -20, bottom: 0 }}>
+                <XAxis dataKey="dateLabel" hide />
+                <YAxis domain={['auto', 'auto']} tick={{ fontSize: 9, fill: '#334155' }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#94a3b8' }} />
+                <ReferenceLine y={0} stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
+                <Bar dataKey="macdHist" fill="#60a5fa" opacity={0.6} maxBarSize={6} name="Histogram" />
+                <Line type="monotone" dataKey="macdLine" stroke="#f87171" dot={false} strokeWidth={1.5} name="MACD" />
+                <Line type="monotone" dataKey="macdSignal" stroke="#a78bfa" dot={false} strokeWidth={1.5} name="Signal" />
               </ComposedChart>
             </ResponsiveContainer>
           </div>

@@ -1,295 +1,212 @@
 import React, { useState, useMemo } from 'react';
 import {
-  ResponsiveContainer,
-  ComposedChart,
-  Line,
-  Bar,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
+  ResponsiveContainer, ComposedChart, Area, Line, Bar,
+  XAxis, YAxis, Tooltip, CartesianGrid,
 } from 'recharts';
 import { PriceBar, Company, ChartType, Timeframe } from '../../types/stock';
-import { ChartToolbar } from './ChartToolbar';
-import { ChartHeader } from './ChartHeader';
 import { IndicatorSubpanels } from './IndicatorSubpanels';
-import { formatShortDate } from '../../utils/formatters';
+
+const fmtDate = (d: string) => {
+  const [, m, day] = d.split('-');
+  return `${day}/${m}`;
+};
+
+const TIMEFRAME_BARS: Record<Timeframe, number> = {
+  '1W': 7, '1M': 22, '3M': 65, '6M': 130, '1Y': 252, 'ALL': 9999,
+};
 
 interface FinancialChartProps {
   company?: Company;
   history: PriceBar[];
 }
 
-export const FinancialChart: React.FC<FinancialChartProps> = ({ company, history }) => {
-  const [chartType, setChartType] = useState<ChartType>('area');
-  const [timeframe, setTimeframe] = useState<Timeframe>('3M');
-  const [showEMA, setShowEMA] = useState<boolean>(true);
-  const [showBollinger, setShowBollinger] = useState<boolean>(false);
-  const [showVolume, setShowVolume] = useState<boolean>(true);
-  const [showRSI, setShowRSI] = useState<boolean>(false);
-  const [showMACD, setShowMACD] = useState<boolean>(false);
-  const [hoveredBar, setHoveredBar] = useState<PriceBar | null>(null);
+export const FinancialChart: React.FC<FinancialChartProps> = ({ history }) => {
+  const [tf, setTf] = useState<Timeframe>('3M');
+  const [type, setType] = useState<ChartType>('area');
+  const [showEMA, setShowEMA] = useState(true);
+  const [showBB, setShowBB] = useState(false);
+  const [showVol, setShowVol] = useState(true);
+  const [showRSI, setShowRSI] = useState(false);
+  const [showMACD, setShowMACD] = useState(false);
+  const [hovered, setHovered] = useState<PriceBar | null>(null);
 
-  // Filter history based on selected timeframe
-  const filteredData = useMemo(() => {
-    if (history.length === 0) return [];
-    let sliceCount = history.length;
-    switch (timeframe) {
-      case '1W':
-        sliceCount = 7;
-        break;
-      case '1M':
-        sliceCount = 22;
-        break;
-      case '3M':
-        sliceCount = 65;
-        break;
-      case '6M':
-        sliceCount = 130;
-        break;
-      case '1Y':
-        sliceCount = 250;
-        break;
-      case 'ALL':
-      default:
-        sliceCount = history.length;
-    }
+  const data = useMemo(() => {
+    const count = TIMEFRAME_BARS[tf];
+    return history.slice(-count).map(b => ({ ...b, dateLabel: fmtDate(b.date) }));
+  }, [history, tf]);
 
-    return history.slice(-sliceCount).map((bar) => ({
-      ...bar,
-      dateFormatted: formatShortDate(bar.date),
-      ema12: bar.ema12 ?? undefined,
-      ema26: bar.ema26 ?? undefined,
-      ema50: bar.ema50 ?? undefined,
-      bbUpper: bar.bbUpper ?? undefined,
-      bbMiddle: bar.bbMiddle ?? undefined,
-      bbLower: bar.bbLower ?? undefined,
-    }));
-  }, [history, timeframe]);
+  const latest = data[data.length - 1] ?? null;
+  const active = hovered ?? latest;
 
-  const latestBar = history.length > 0 ? history[history.length - 1] : null;
+  const isUp = active ? active.close >= active.open : true;
 
-  // Custom Candlestick Renderer
-  const CandlestickBar = (props: any) => {
-    const { x, y, width, height, open, close, high, low } = props;
-    if (open === undefined || close === undefined || high === undefined || low === undefined) {
-      return null;
-    }
-
-    const isBullish = close >= open;
-    const color = isBullish ? '#10b981' : '#f43f5e';
-
-    const priceDelta = Math.abs(open - close) || 0.01;
-    const ratio = height / priceDelta;
-
-    const topPixel = Math.min(y, y + height);
-    const wickTop = topPixel - (high - Math.max(open, close)) * ratio;
-    const wickBottom = topPixel + height + (Math.min(open, close) - low) * ratio;
-    const wickX = x + width / 2;
-
+  const CandlestickShape = (props: any) => {
+    const { x, y, width, height, payload } = props;
+    if (!payload) return null;
+    const _open = payload.open;
+    const _close = payload.close;
+    const _high = payload.high;
+    const _low = payload.low;
+    const bull = _close >= _open;
+    const color = bull ? '#22c55e' : '#ef4444';
+    if (!height || !width) return null;
+    const mid = x + width / 2;
+    const bodyTop = Math.min(y, y + height);
+    const bodyBot = Math.max(y, y + height);
+    const pxPerUnit = Math.abs(height) / (Math.abs(_close - _open) || 0.01);
+    const wickTop = bodyTop - (_high - Math.max(_open, _close)) * pxPerUnit;
+    const wickBot = bodyBot + (Math.min(_open, _close) - _low) * pxPerUnit;
     return (
       <g>
-        <line
-          x1={wickX}
-          y1={isNaN(wickTop) ? topPixel : wickTop}
-          x2={wickX}
-          y2={isNaN(wickBottom) ? topPixel + height : wickBottom}
-          stroke={color}
-          strokeWidth={1.5}
-        />
-        <rect
-          x={x}
-          y={topPixel}
-          width={Math.max(width, 2)}
-          height={Math.max(height, 2)}
-          fill={color}
-          stroke={color}
-          rx={1}
-        />
+        <line x1={mid} y1={wickTop} x2={mid} y2={bodyTop} stroke={color} strokeWidth={1.5} />
+        <line x1={mid} y1={bodyBot} x2={mid} y2={wickBot} stroke={color} strokeWidth={1.5} />
+        <rect x={x + 1} y={bodyTop} width={Math.max(width - 2, 2)} height={Math.max(Math.abs(height), 2)} fill={color} rx={1} />
       </g>
     );
   };
 
+  const TF_OPTS: Timeframe[] = ['1W', '1M', '3M', '6M', '1Y', 'ALL'];
+
+  const IndicatorToggle = ({ label, active: on, onClick, color }: { label: string; active: boolean; onClick: () => void; color: string }) => (
+    <button
+      onClick={onClick}
+      className="text-xs font-mono px-2.5 py-1 rounded-lg border transition-all"
+      style={{
+        background: on ? `${color}15` : 'transparent',
+        borderColor: on ? `${color}40` : 'rgba(255,255,255,0.07)',
+        color: on ? color : '#475569',
+      }}
+    >
+      {label}
+    </button>
+  );
+
   return (
-    <div className="p-5 sm:p-6 rounded-2xl surface-card flex flex-col gap-3">
-      {/* Chart Toolbar */}
-      <ChartToolbar
-        chartType={chartType}
-        onChangeChartType={setChartType}
-        timeframe={timeframe}
-        onChangeTimeframe={setTimeframe}
-        showEMA={showEMA}
-        onToggleEMA={() => setShowEMA(!showEMA)}
-        showBollinger={showBollinger}
-        onToggleBollinger={() => setShowBollinger(!showBollinger)}
-        showVolume={showVolume}
-        onToggleVolume={() => setShowVolume(!showVolume)}
-        showRSI={showRSI}
-        onToggleRSI={() => setShowRSI(!showRSI)}
-        showMACD={showMACD}
-        onToggleMACD={() => setShowMACD(!showMACD)}
-      />
+    <div className="card p-4 sm:p-5 flex flex-col gap-4">
+      {/* Toolbar row */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {/* Timeframe selector */}
+        <div className="seg-control">
+          {TF_OPTS.map(t => (
+            <button key={t} className={`seg-btn ${tf === t ? 'active' : ''}`} onClick={() => setTf(t)}>{t}</button>
+          ))}
+        </div>
 
-      {/* Header Info */}
-      <ChartHeader
-        company={company}
-        hoveredBar={hoveredBar}
-        latestBar={latestBar}
-      />
-
-      {/* Main Chart Canvas */}
-      <div className="h-[360px] sm:h-[400px] w-full relative">
-        {filteredData.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-slate-500 text-sm">
-            No price bars loaded.
+        {/* Right controls */}
+        <div className="flex items-center gap-2">
+          <div className="seg-control">
+            <button className={`seg-btn ${type === 'area' ? 'active' : ''}`} onClick={() => setType('area')}>Area</button>
+            <button className={`seg-btn ${type === 'candlestick' ? 'active' : ''}`} onClick={() => setType('candlestick')}>Candles</button>
           </div>
+          <div className="h-4 w-px bg-white/8 hidden sm:block" />
+          <div className="flex items-center gap-1">
+            <IndicatorToggle label="EMA" active={showEMA} onClick={() => setShowEMA(v => !v)} color="#60a5fa" />
+            <IndicatorToggle label="BB" active={showBB} onClick={() => setShowBB(v => !v)} color="#a78bfa" />
+            <IndicatorToggle label="Vol" active={showVol} onClick={() => setShowVol(v => !v)} color="#94a3b8" />
+            <IndicatorToggle label="RSI" active={showRSI} onClick={() => setShowRSI(v => !v)} color="#fbbf24" />
+            <IndicatorToggle label="MACD" active={showMACD} onClick={() => setShowMACD(v => !v)} color="#f87171" />
+          </div>
+        </div>
+      </div>
+
+      {/* OHLC readout bar */}
+      {active && (
+        <div className="flex flex-wrap items-center gap-4 text-xs font-mono" style={{ color: '#64748b' }}>
+          <span style={{ color: '#94a3b8' }}>{active.date}</span>
+          <span>O <strong className="text-white">{active.open.toFixed(2)}</strong></span>
+          <span>H <strong className="text-green-400">{active.high.toFixed(2)}</strong></span>
+          <span>L <strong className="text-red-400">{active.low.toFixed(2)}</strong></span>
+          <span>C <strong className={isUp ? 'text-green-400' : 'text-red-400'}>{active.close.toFixed(2)}</strong></span>
+          <span>Vol <strong className="text-white">{(active.volume / 1000).toFixed(1)}K</strong></span>
+        </div>
+      )}
+
+      {/* Main chart */}
+      <div className="h-[340px] sm:h-[380px]" onMouseLeave={() => setHovered(null)}>
+        {data.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-sm text-slate-500">Loading price data…</div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
-              data={filteredData}
-              margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+              data={data}
+              margin={{ top: 8, right: 8, bottom: 0, left: -12 }}
               onMouseMove={(state: any) => {
-                if (state && state.activePayload && state.activePayload.length > 0) {
-                  setHoveredBar(state.activePayload[0].payload);
-                }
+                if (state?.activePayload?.[0]?.payload) setHovered(state.activePayload[0].payload);
               }}
-              onMouseLeave={() => setHoveredBar(null)}
             >
               <defs>
-                <linearGradient id="minimalAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22c55e" stopOpacity={0.15} />
+                  <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
                 </linearGradient>
               </defs>
-
+              <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="0" vertical={false} />
               <XAxis
-                dataKey="dateFormatted"
-                stroke="#334155"
+                dataKey="dateLabel"
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontSize: 10, fill: '#64748b', fontFamily: 'monospace' }}
+                tick={{ fontSize: 10, fill: '#334155', fontFamily: 'JetBrains Mono' }}
+                interval="preserveStartEnd"
               />
               <YAxis
-                stroke="#334155"
+                orientation="right"
                 tickLine={false}
                 axisLine={false}
+                tick={{ fontSize: 10, fill: '#334155', fontFamily: 'JetBrains Mono' }}
                 domain={['auto', 'auto']}
-                orientation="right"
-                tick={{ fontSize: 10, fill: '#64748b', fontFamily: 'monospace' }}
               />
-
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#111827',
-                  borderColor: '#1e293b',
-                  borderRadius: '10px',
-                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
-                  fontSize: '11px',
-                  fontFamily: 'monospace',
+                  background: '#1a2035',
+                  border: '1px solid rgba(255,255,255,0.09)',
+                  borderRadius: 10,
+                  fontSize: 11,
+                  fontFamily: 'JetBrains Mono',
                 }}
-                labelStyle={{ color: '#94a3b8', fontWeight: 'bold' }}
+                labelStyle={{ color: '#94a3b8' }}
+                itemStyle={{ color: '#e2e8f0' }}
               />
 
-              {/* Volume Bars */}
-              {showVolume && (
-                <Bar
-                  dataKey="volume"
-                  name="Volume"
-                  fill="#1e293b"
-                  opacity={0.35}
-                  maxBarSize={10}
-                />
+              {showVol && (
+                <Bar dataKey="volume" fill="rgba(255,255,255,0.04)" maxBarSize={8} yAxisId={0} />
               )}
 
-              {/* Candlestick Mode */}
-              {chartType === 'candlestick' && (
-                <Bar
-                  dataKey="close"
-                  name="Price Action"
-                  shape={<CandlestickBar />}
-                  maxBarSize={12}
-                />
-              )}
-
-              {/* Area Gradient Mode */}
-              {chartType === 'area' && (
+              {type === 'area' && (
                 <Area
                   type="monotone"
                   dataKey="close"
-                  name="LTP (Rs.)"
-                  stroke="#10b981"
-                  strokeWidth={2.2}
-                  fill="url(#minimalAreaGradient)"
-                  dot={false}
-                  activeDot={{ r: 4, fill: '#10b981' }}
-                />
-              )}
-
-              {/* Line Mode */}
-              {chartType === 'line' && (
-                <Line
-                  type="monotone"
-                  dataKey="close"
-                  name="LTP (Rs.)"
-                  stroke="#38bdf8"
+                  stroke="#22c55e"
                   strokeWidth={2}
+                  fill="url(#areaGrad)"
                   dot={false}
-                  activeDot={{ r: 4, fill: '#38bdf8' }}
+                  activeDot={{ r: 4, fill: '#22c55e', stroke: '#0e1117', strokeWidth: 2 }}
+                  name="Price"
                 />
               )}
 
-              {/* Bollinger Bands */}
-              {showBollinger && (
-                <Line
-                  type="monotone"
-                  dataKey="bbUpper"
-                  name="BB Upper"
-                  stroke="#c084fc"
-                  strokeDasharray="2 2"
-                  strokeWidth={1}
-                  dot={false}
-                />
-              )}
-              {showBollinger && (
-                <Line
-                  type="monotone"
-                  dataKey="bbLower"
-                  name="BB Lower"
-                  stroke="#c084fc"
-                  strokeDasharray="2 2"
-                  strokeWidth={1}
-                  dot={false}
-                />
+              {type === 'candlestick' && (
+                <Bar dataKey="close" shape={<CandlestickShape />} maxBarSize={12} name="Price" />
               )}
 
-              {/* Moving Averages */}
               {showEMA && (
-                <Line
-                  type="monotone"
-                  dataKey="ema12"
-                  name="EMA 12"
-                  stroke="#f59e0b"
-                  strokeWidth={1.2}
-                  dot={false}
-                />
+                <>
+                  <Line type="monotone" dataKey="ema12" stroke="#60a5fa" strokeWidth={1.5} dot={false} name="EMA 12" />
+                  <Line type="monotone" dataKey="ema50" stroke="#818cf8" strokeWidth={1.5} dot={false} name="EMA 50" />
+                </>
               )}
-              {showEMA && (
-                <Line
-                  type="monotone"
-                  dataKey="ema50"
-                  name="EMA 50"
-                  stroke="#8b5cf6"
-                  strokeWidth={1.5}
-                  dot={false}
-                />
+              {showBB && (
+                <>
+                  <Line type="monotone" dataKey="bbUpper" stroke="#a78bfa" strokeWidth={1} strokeDasharray="3 3" dot={false} name="BB Upper" />
+                  <Line type="monotone" dataKey="bbLower" stroke="#a78bfa" strokeWidth={1} strokeDasharray="3 3" dot={false} name="BB Lower" />
+                </>
               )}
             </ComposedChart>
           </ResponsiveContainer>
         )}
       </div>
 
-      {/* Subpanels */}
-      <IndicatorSubpanels data={filteredData} showRSI={showRSI} showMACD={showMACD} />
+      {/* Sub-panels */}
+      <IndicatorSubpanels data={data} showRSI={showRSI} showMACD={showMACD} />
     </div>
   );
 };
