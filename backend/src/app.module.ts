@@ -4,7 +4,8 @@ import { DatabaseModule } from './database/database.module';
 import { MarketDataModule } from './market-data/market-data.module';
 import { StockModule } from './stock/stock.module';
 import { PredictionModule } from './prediction/prediction.module';
-import { DatabaseService } from './database/database.service';
+import { AlertsModule } from './alerts/alerts.module';
+import { PortfolioModule } from './portfolio/portfolio.module';
 
 @Module({
   imports: [
@@ -13,6 +14,8 @@ import { DatabaseService } from './database/database.service';
     MarketDataModule,
     StockModule,
     PredictionModule,
+    AlertsModule,
+    PortfolioModule,
   ],
 })
 export class AppModule {}

@@ -216,22 +216,39 @@ async function main() {
     console.log(`Seeded ${catalog.length} companies from fallback catalog.`);
   }
 
-  // Now seed historical price bars for top active stocks
-  const seededCompanies = await prisma.company.findMany({ take: 30 });
+  // Now seed historical price bars for key active benchmark stocks
+  const benchmarkSymbols = [
+    'NABIL', 'GBIME', 'NICA', 'EBL', 'HBL', 'KBL', 'MBL', 'NBL', 'NMB', 'PCBL',
+    'PRVU', 'SANIMA', 'SBI', 'SCB', 'SBL', 'ADBL', 'AHPC', 'AKPL', 'API', 'BPCL',
+    'CHCL', 'HDHPC', 'HURJA', 'KPCL', 'NHDL', 'RHPL', 'RURU', 'SAHAS', 'SHPC', 'UMRH',
+    'BARUN', 'NLIC', 'LICN', 'ALICL', 'CIT', 'NIFRA', 'HDL', 'SHIVM', 'SONA', 'OHL',
+    'SHL', 'NTC', 'CBBL', 'DDBL', 'FOWAD', 'MERO'
+  ];
+
+  // Also include first 30 in database
+  const first30 = await prisma.company.findMany({ take: 30 });
+  const allTargetSymbols = Array.from(new Set([...benchmarkSymbols, ...first30.map(c => c.symbol)]));
+  const seededCompanies = await prisma.company.findMany({
+    where: { symbol: { in: allTargetSymbols } },
+  });
+
   const today = new Date();
 
-  console.log(`Generating price history (60 trading days) for active securities...`);
+  console.log(`Generating price history (60 trading days) for ${seededCompanies.length} active securities...`);
   for (const comp of seededCompanies) {
-    let basePrice = 300;
-    if (comp.symbol === 'NABIL') basePrice = 520;
-    if (comp.symbol === 'NICA') basePrice = 460;
-    if (comp.symbol === 'GBIME') basePrice = 280;
-    if (comp.symbol === 'NTC') basePrice = 850;
-    if (comp.symbol === 'HDL') basePrice = 1400;
-    if (comp.symbol === 'SHIVM') basePrice = 510;
-    if (comp.symbol === 'CIT') basePrice = 2200;
-    if (comp.symbol === 'NLIC') basePrice = 640;
-    if (comp.symbol === 'CHCL') basePrice = 410;
+    let basePrice = 350;
+    if (comp.symbol === 'NABIL') basePrice = 538;
+    if (comp.symbol === 'NICA') basePrice = 472;
+    if (comp.symbol === 'GBIME') basePrice = 276;
+    if (comp.symbol === 'NTC') basePrice = 875;
+    if (comp.symbol === 'HDL') basePrice = 1360;
+    if (comp.symbol === 'SHIVM') basePrice = 494;
+    if (comp.symbol === 'CIT') basePrice = 2160;
+    if (comp.symbol === 'NLIC') basePrice = 628;
+    if (comp.symbol === 'CHCL') basePrice = 404;
+    if (comp.symbol === 'AHPC') basePrice = 388;
+    if (comp.symbol === 'AKPL') basePrice = 312;
+    if (comp.symbol === 'API') basePrice = 242;
 
     let price = basePrice;
     for (let i = 60; i >= 0; i--) {

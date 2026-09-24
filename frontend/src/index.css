@@ -45,6 +45,17 @@
 ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #334155; }
 
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.22); }
+
+/* Fast list item virtualization via CSS contain & content-visibility */
+.stock-list-item {
+  content-visibility: auto;
+  contain-intrinsic-size: 44px;
+}
+
 /* --- Core Card Primitive --- */
 .card {
   background: var(--bg-card);
