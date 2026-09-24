@@ -51,6 +51,7 @@ def add_page_number_to_section(section, start_type="decimal", start_num=1):
     sectPr.append(pgNumType)
 
 def add_footer_page_number(section):
+    section.footer.is_linked_to_previous = False
     footer = section.footer
     p = footer.paragraphs[0]
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER

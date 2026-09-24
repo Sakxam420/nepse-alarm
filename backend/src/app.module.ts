@@ -7,6 +7,9 @@ import { PredictionModule } from './prediction/prediction.module';
 import { AlertsModule } from './alerts/alerts.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
 
+import { AppController } from './app.controller';
+import { AuthModule } from './auth/auth.module';
+
 @Module({
   imports: [
     ScheduleModule.forRoot(),
@@ -16,6 +19,8 @@ import { PortfolioModule } from './portfolio/portfolio.module';
     PredictionModule,
     AlertsModule,
     PortfolioModule,
+    AuthModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}

@@ -15,9 +15,12 @@ import {
   Volume2,
   VolumeX,
   CheckCircle2,
+  LogIn,
+  LogOut,
+  ChevronDown,
 } from 'lucide-react';
 import { getMarketStatus } from '../../utils/mockData';
-import { TriggeredAlertItem } from '../../types/stock';
+import { TriggeredAlertItem, AuthUser } from '../../types/stock';
 
 export type NavTab = 'overview' | 'ai' | 'technical' | 'screener' | 'portfolio' | 'sectors';
 
@@ -35,6 +38,9 @@ interface HeaderProps {
   soundEnabled?: boolean;
   onToggleSound?: () => void;
   watchlistCount?: number;
+  user?: AuthUser | null;
+  onOpenLogin?: () => void;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -50,21 +56,29 @@ export const Header: React.FC<HeaderProps> = ({
   triggeredHistory = [],
   soundEnabled = true,
   onToggleSound,
+  user,
+  onOpenLogin,
+  onLogout,
 }) => {
   const [market, setMarket] = useState(getMarketStatus());
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const t = setInterval(() => setMarket(getMarketStatus()), 60_000);
     return () => clearInterval(t);
   }, []);
 
-  // Close dropdown on click outside
+  // Close dropdowns on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setNotificationOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -179,7 +193,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => {
-                setNotificationOpen(p => !p);
+                setNotificationOpen((p: boolean) => !p);
               }}
               className="btn p-2 text-xs relative"
               style={{ width: 36, height: 36, justifyContent: 'center' }}
@@ -257,10 +271,117 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* AI Architecture Modal */}
-          <button onClick={onOpenArchitecture} className="hidden sm:flex btn btn-accent text-xs gap-1.5">
+          <button onClick={onOpenArchitecture} className="hidden md:flex btn btn-accent text-xs gap-1.5">
             <Cpu className="h-3.5 w-3.5" />
             <span>AI Architecture</span>
           </button>
+
+          {/* User Auth Profile / Login Button */}
+          <div className="relative" ref={userMenuRef}>
+            {user ? (
+              <button
+                onClick={() => setUserMenuOpen((p: boolean) => !p)}
+                className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-xl transition-all border"
+                style={{
+                  background: userMenuOpen ? 'rgba(79, 142, 247, 0.16)' : 'rgba(255, 255, 255, 0.05)',
+                  borderColor: userMenuOpen ? 'rgba(79, 142, 247, 0.4)' : 'rgba(255, 255, 255, 0.08)',
+                }}
+                title={`Logged in as ${user.name} (${user.email})`}
+              >
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="h-6 w-6 rounded-full border border-blue-400/40 object-cover"
+                />
+                <div className="hidden sm:flex flex-col text-left">
+                  <span className="text-xs font-bold text-slate-100 max-w-[90px] truncate leading-tight">
+                    {user.name.split(' ')[0]}
+                  </span>
+                  <span className="text-[9px] text-blue-400 font-medium leading-none">
+                    {user.isGuest ? 'Guest' : 'Trader'}
+                  </span>
+                </div>
+                <ChevronDown className={`h-3 w-3 text-slate-400 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+            ) : (
+              <button
+                onClick={onOpenLogin}
+                className="btn text-xs gap-1.5 font-bold shadow-md shadow-blue-500/10"
+                style={{
+                  background: 'rgba(79, 142, 247, 0.16)',
+                  border: '1px solid rgba(79, 142, 247, 0.35)',
+                  color: '#93c5fd',
+                }}
+              >
+                <LogIn className="h-3.5 w-3.5 text-blue-400" />
+                <span>Sign In</span>
+              </button>
+            )}
+
+            {/* User Profile Popover */}
+            {userMenuOpen && user && (
+              <div
+                className="absolute right-0 mt-2 w-72 rounded-2xl shadow-2xl z-50 p-4 border flex flex-col gap-3.5 animate-fadeIn"
+                style={{
+                  background: 'rgba(15, 20, 31, 0.98)',
+                  backdropFilter: 'blur(20px)',
+                  borderColor: 'rgba(79, 142, 247, 0.25)',
+                  boxShadow: '0 20px 50px -10px rgba(0,0,0,0.8), 0 0 30px -10px rgba(59, 130, 246, 0.15)',
+                }}
+              >
+                <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="h-10 w-10 rounded-full border border-blue-500/30 object-cover shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-sm font-bold text-white truncate">{user.name}</h4>
+                    <p className="text-xs text-slate-400 truncate">{user.email}</p>
+                    <span className="inline-block mt-0.5 text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
+                      {user.role || 'Active Trader'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 text-xs text-slate-300">
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900/60 border border-slate-800/80">
+                    <span className="text-slate-400">Account Status</span>
+                    <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Active Session
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900/60 border border-slate-800/80">
+                    <span className="text-slate-400">Paper Balance</span>
+                    <span className="text-slate-100 font-mono font-bold">Rs. 100,000.00</span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-800 flex gap-2">
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      onOpenLogin?.();
+                    }}
+                    className="flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors"
+                  >
+                    Switch User
+                  </button>
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      onLogout?.();
+                    }}
+                    className="flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Mobile hamburger */}
           <button

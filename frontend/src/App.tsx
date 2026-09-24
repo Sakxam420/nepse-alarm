@@ -5,11 +5,13 @@ import { useAlerts } from './hooks/useAlerts';
 import { usePortfolio } from './hooks/usePortfolio';
 import { useMarketOverview } from './hooks/useMarketOverview';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useAuth } from './hooks/useAuth';
 
 import { TickerTape } from './components/layout/TickerTape';
 import { Header, NavTab } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { SearchModal } from './components/layout/SearchModal';
+import { AuthModal } from './components/auth/AuthModal';
 
 import { StockSidebar } from './components/stock-explorer/StockSidebar';
 import { StockHero } from './components/stock-explorer/StockHero';
@@ -49,6 +51,7 @@ export default function App() {
   } = useStockData();
 
   const { watchlist, toggleFavorite, isFavorite } = useWatchlist();
+  const auth = useAuth();
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const addToast = (message: string, type: 'success' | 'error' | 'info' = 'info', title?: string) => {
@@ -164,6 +167,12 @@ export default function App() {
         soundEnabled={soundEnabled}
         onToggleSound={toggleSound}
         watchlistCount={watchlist.length}
+        user={auth.user}
+        onOpenLogin={auth.openAuthModal}
+        onLogout={() => {
+          auth.logout();
+          addToast('Signed out of session', 'info');
+        }}
       />
 
       {/* Page Body */}
@@ -362,6 +371,31 @@ export default function App() {
       />
 
       <ModelArchitectureModal isOpen={archOpen} onClose={() => setArchOpen(false)} />
+
+      {/* Authentication Gateway & Profile Modal */}
+      <AuthModal
+        isOpen={auth.isAuthModalOpen}
+        onClose={auth.closeAuthModal}
+        lastUser={auth.lastUser}
+        onLogin={async (email, pass, rem) => {
+          const ok = await auth.login(email, pass, rem);
+          if (ok) addToast('Welcome back to NEPSE AI!', 'success', 'Session Active');
+          return ok;
+        }}
+        onRegister={async (name, email, pass) => {
+          const ok = await auth.register(name, email, pass);
+          if (ok) addToast('Trader account created successfully!', 'success', 'Welcome');
+          return ok;
+        }}
+        onLoginAsGuest={() => {
+          auth.loginAsGuest();
+          addToast('Browsing as Guest Analyst', 'info', 'Guest Session');
+        }}
+        onForgetLastUser={auth.forgetLastUser}
+        loading={auth.loading}
+        errorMessage={auth.authError}
+        onClearError={() => auth.setAuthError(null)}
+      />
     </div>
   );
 }

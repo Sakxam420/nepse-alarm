@@ -178,3 +178,14 @@ export interface MarketSummary {
     stockCount: number;
   }>;
 }
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar: string;
+  createdAt?: string;
+  isGuest?: boolean;
+}
+
